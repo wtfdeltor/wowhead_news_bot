@@ -12,9 +12,6 @@ TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
 NOOBCLUB_RSS = "https://www.noob-club.ru/index.php?type=rss;sa=news;action=.xml"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-MAX_CAPTION_LENGTH = 1024
-
-
 def fetch_latest_article():
     print("🔁 Загружаем RSS-фид Noob Club...")
     response = requests.get(NOOBCLUB_RSS, headers=HEADERS)
@@ -31,46 +28,27 @@ def fetch_latest_article():
 
     entry = feed.entries[0]
 
-    # Загрузка полной статьи
-    full_html = requests.get(entry.link, headers=HEADERS).text
-    full_soup = BeautifulSoup(full_html, "html.parser")
-
-    # Находим контент поста
-    post_container = full_soup.find("div", class_="post")
-
-    # Извлекаем первую картинку
-    img_tag = post_container.find("img") if post_container else None
+    soup = BeautifulSoup(entry.summary, "html.parser")
+    img_tag = soup.find("img")
     image_url = img_tag["src"] if img_tag else None
-    if image_url and image_url.startswith("/"):
-        image_url = "https://www.noob-club.ru" + image_url
-
-    # Извлекаем первый абзац как превью
-    first_paragraph = post_container.find("p").get_text(strip=True) if post_container and post_container.find("p") else entry.summary
-    if len(first_paragraph) > 800:
-        first_paragraph = first_paragraph[:797] + "..."
 
     return {
         "title": entry.title,
         "link": entry.link,
         "published": entry.published,
-        "preview": first_paragraph,
+        "summary": soup.get_text(),
         "image": image_url,
     }
 
-
-def post_to_telegram(title, link, preview, image_url):
-    caption = f"<b>{title}</b>\n{preview}\n<a href='{link}'>Читать полностью</a>"
-    if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href='{link}'>Читать полностью</a>") - 3] + "..."
-        caption = f"<b>{title}</b>\n{preview_cut}\n<a href='{link}'>Читать полностью</a>"
-
+def post_to_telegram(title, link, summary, image_url):
+    preview = f"<b>{title}</b>\n{summary[:200]}...\n<a href='{link}'>Читать полностью</a>"
     if image_url:
         response = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto",
             data={
                 "chat_id": TELEGRAM_CHANNEL,
                 "photo": image_url,
-                "caption": caption,
+                "caption": preview,
                 "parse_mode": "HTML",
             },
         )
@@ -79,13 +57,12 @@ def post_to_telegram(title, link, preview, image_url):
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
             data={
                 "chat_id": TELEGRAM_CHANNEL,
-                "text": caption,
+                "text": preview,
                 "parse_mode": "HTML",
                 "disable_web_page_preview": False,
             },
         )
     print(f"📤 Статус отправки в Telegram: {response.status_code}")
-
 
 if __name__ == "__main__":
     article = fetch_latest_article()
@@ -93,4 +70,4 @@ if __name__ == "__main__":
         print("⚠️ Новостей нет — завершение скрипта.")
         exit(0)
 
-    post_to_telegram(article["title"], article["link"], article["preview"], article["image"])
+    post_to_telegram(article["title"], article["link"], article["summary"], article["image"])
