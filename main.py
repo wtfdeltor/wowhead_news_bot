@@ -3,7 +3,7 @@
 import feedparser
 import requests
 import os
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup
 from datetime import datetime
 import re
 
@@ -19,7 +19,7 @@ def clean_html_preserve_spaces(html):
     soup = BeautifulSoup(html, "html.parser")
     for br in soup.find_all("br"):
         br.replace_with("\n")
-    text = ''.join(str(e) if isinstance(e, NavigableString) else e.get_text(" ", strip=True) for e in soup.recursiveChildGenerator())
+    text = soup.get_text(" ", strip=True)
     return re.sub(r'\s+', ' ', text).strip()
 
 def fetch_latest_article():
