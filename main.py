@@ -30,10 +30,11 @@ def clean_html_preserve_spaces(html_text):
     text = soup.get_text(" ", strip=True)
     text = html.unescape(text)
     text = re.sub(r":cut:", "", text)
-    text = re.sub(r'\s+([.,!?;:])', r'\1', text)
-    text = re.sub(r'([.,!?;:])(\S)', r'\1 \2', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    text = text.replace("'", "'").replace('"', '"')
+    text = re.sub(r"\s+([.,!?;:])", r"\1", text)
+    text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = text.replace("\u201c", '"').replace("\u201d", '"')
+    text = text.replace("#039", "'").replace("&quot;", '"').replace("quot", '"')
     return text
 
 def has_been_posted(link):
