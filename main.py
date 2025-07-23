@@ -25,9 +25,13 @@ def clean_html_preserve_spaces(html):
         if tag.string:
             tag.replace_with(tag.get_text())
 
+    # Удаление артефактов вроде :cut:
     text = soup.get_text(" ", strip=True)
-    text = re.sub(r'\s+([.,!?;:])', r'\1', text)  # удаляем пробелы перед знаками препинания
-    text = re.sub(r'\s+', ' ', text).strip()       # нормализуем пробелы
+    text = re.sub(r":cut:", "", text)
+
+    # Пробелы и пунктуация
+    text = re.sub(r'\s+([.,!?;:])', r'\1', text)
+    text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 def fetch_latest_article():
@@ -92,12 +96,9 @@ def create_telegraph_page(title, html):
     content = BeautifulSoup(html, "html.parser")
 
     for tag in content.find_all(True):
-        if tag.name in ["div", "span"]:
-            tag.name = "p"
-        elif tag.name not in allowed_tags:
-            tag.unwrap()
-
-        tag.attrs = {k: v for k, v in tag.attrs.items() if k in ("href", "src", "alt")}
+        if tag.name == "img" and ("1x1.gif" in tag.get("src", "") or "blank.gif" in tag.get("src", "")):
+            tag.decompose()
+            continue
 
         if tag.name == "img":
             figure = content.new_tag("figure")
@@ -105,6 +106,26 @@ def create_telegraph_page(title, html):
             figcaption.string = tag.get("alt", "")
             tag.wrap(figure)
             figure.append(figcaption)
+
+        elif tag.name == "iframe" or tag.name == "video":
+            src = tag.get("src") or tag.get("data-src")
+            if src:
+                link_tag = content.new_tag("a", href=src)
+                link_tag.string = "Смотреть видео"
+                tag.replace_with(link_tag)
+            else:
+                tag.decompose()
+
+        elif tag.name == "div" and tag.get("class") == ["bbc_standard_quote"]:
+            tag.name = "blockquote"
+
+        elif tag.name in ["div", "span"]:
+            tag.name = "p"
+
+        elif tag.name not in allowed_tags:
+            tag.unwrap()
+
+        tag.attrs = {k: v for k, v in tag.attrs.items() if k in ("href", "src", "alt")}
 
     response = telegraph.create_page(
         title=title,
