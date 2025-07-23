@@ -118,22 +118,17 @@ def build_instant_view_url(link):
 
 def post_to_telegram(title, iv_link, preview, image_url):
     invisible_char = '\u200E'
-    caption = f"<b>{title}</b>\n\n{preview}\n\n<a href=\"{iv_link}\">Читать полностью</a>"
+    message = f"<a href=\"{image_url}\">{invisible_char}</a>\n<b>{title}</b>\n\n{preview}\n\n{iv_link}" if image_url else f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
 
-    if image_url:
-        caption = f"<a href=\"{image_url}\">{invisible_char}</a>\n" + caption
-
-    if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href=\"{iv_link}\">Читать полностью</a>") - 5] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n<a href=\"{iv_link}\">Читать полностью</a>"
-        if image_url:
-            caption = f"<a href=\"{image_url}\">{invisible_char}</a>\n" + caption
+    if len(message) > MAX_CAPTION_LENGTH:
+        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 5] + "..."
+        message = f"<a href=\"{image_url}\">{invisible_char}</a>\n<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}" if image_url else f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
 
     response = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
         data={
             "chat_id": TELEGRAM_CHANNEL,
-            "text": caption,
+            "text": message,
             "parse_mode": "HTML",
             "disable_web_page_preview": False,
         },
