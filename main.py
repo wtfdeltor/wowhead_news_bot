@@ -3,8 +3,9 @@
 import feedparser
 import requests
 import os
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 from datetime import datetime
+import re
 
 # Константы и переменные окружения
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -13,6 +14,13 @@ NOOBCLUB_RSS = "https://www.noob-club.ru/index.php?type=rss;sa=news;action=.xml"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 MAX_CAPTION_LENGTH = 1024
+
+def clean_html_preserve_spaces(html):
+    soup = BeautifulSoup(html, "html.parser")
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+    text = ''.join(str(e) if isinstance(e, NavigableString) else e.get_text(" ", strip=True) for e in soup.recursiveChildGenerator())
+    return re.sub(r'\s+', ' ', text).strip()
 
 def fetch_latest_article():
     print("🔁 Загружаем RSS-фид Noob Club...")
@@ -49,7 +57,8 @@ def fetch_latest_article():
         preview_html = summary_html.split("<br /><br />")[0]
     else:
         preview_html = summary_html
-    preview_text = BeautifulSoup(preview_html, "html.parser").get_text(strip=True)
+
+    preview_text = clean_html_preserve_spaces(preview_html)
 
     return {
         "title": entry.title,
