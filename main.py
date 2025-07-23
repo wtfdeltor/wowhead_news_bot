@@ -1,4 +1,4 @@
-# wowhead_news_bot_mvp (Yandex Translate API версия)
+# wowhead_news_bot_mvp (бесплатный перевод через LibreTranslate)
 
 import feedparser
 import requests
@@ -9,12 +9,10 @@ from bs4 import BeautifulSoup
 # Переменные из GitHub Secrets или .env
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
-YANDEX_API_KEY = os.getenv("YANDEX_API_KEY")
-YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID")
 GITHUB_PAGES_URL = os.getenv("PAGES_URL")  # например: https://username.github.io/wow
-
 WOWHEAD_RSS = "https://www.wowhead.com/news/rss/all"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
+
 
 def fetch_latest_article():
     print("🔁 Загружаем RSS-фид...")
@@ -44,22 +42,21 @@ def fetch_latest_article():
         "summary": BeautifulSoup(entry.summary, "html.parser").get_text(),
     }
 
+
 def translate_text(text):
-    print("🌐 Перевод через Yandex Translate API...")
-    url = "https://translate.api.cloud.yandex.net"
-    headers = {
-        "Authorization": f"Api-Key {YANDEX_API_KEY}",
-        "Content-Type": "application/json"
+    print("🌐 Перевод через LibreTranslate...")
+    url = "https://libretranslate.de/translate"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "q": text,
+        "source": "en",
+        "target": "ru",
+        "format": "text"
     }
-    data = {
-        "targetLanguageCode": "ru",
-        "texts": [text],
-        "folderId": YANDEX_FOLDER_ID
-    }
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
-    result = response.json()
-    return result["translations"][0]["text"]
+    return response.json()["translatedText"]
+
 
 def generate_html(title, content, original_link):
     safe_title = title.lower().replace(" ", "-").replace(".", "").replace("/", "-")[:60]
@@ -80,6 +77,7 @@ def generate_html(title, content, original_link):
         f.write(html)
     return filename
 
+
 def post_to_telegram(title, link, summary):
     preview = f"<b>{title}</b>\n{summary[:200]}...\n<a href='{link}'>Читать полностью</a>"
     requests.post(
@@ -91,6 +89,7 @@ def post_to_telegram(title, link, summary):
             "disable_web_page_preview": False,
         },
     )
+
 
 if __name__ == "__main__":
     article = fetch_latest_article()
