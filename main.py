@@ -117,10 +117,10 @@ def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
 def post_to_telegram(title, iv_link, preview, image_url):
-    caption = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
+    caption = f"<b>{title}</b>\n\n{preview}\n\n\n{iv_link}"
     if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 3] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
+        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n\n{iv_link}") - 3] + "..."
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n\n{iv_link}"
 
     if image_url:
         response = requests.post(
