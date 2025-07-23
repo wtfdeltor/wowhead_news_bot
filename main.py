@@ -29,12 +29,22 @@ def clean_html_preserve_spaces(html_text):
 
     text = soup.get_text(" ", strip=True)
     text = html.unescape(text)
+
+    # Очистка лишних html-сущностей
     text = re.sub(r":cut:", "", text)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
     text = re.sub(r"\s+", " ", text).strip()
+
+    # Явная замена нестандартных кавычек и апострофов
     text = text.replace("\u201c", '"').replace("\u201d", '"')
-    text = text.replace("#039", "'").replace("&quot;", '"').replace("quot", '"')
+    text = text.replace("\u2018", "'").replace("\u2019", "'")
+    text = text.replace("&quot;", '"')
+    text = text.replace("&#039;", "'")
+    text = text.replace("#039", "'")
+    text = re.sub(r"'+", "'", text)
+    text = re.sub(r'"+', '"', text)
+
     return text
 
 def has_been_posted(link):
