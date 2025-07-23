@@ -20,13 +20,25 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
 def fetch_latest_article():
-    feed = feedparser.parse(WOWHEAD_RSS)
-    entry = feed.entries[0]  # Последняя статья
+    print("🔁 Загружаем RSS-фид...")
+    response = requests.get(WOWHEAD_RSS, headers=HEADERS)
+    if response.status_code != 200:
+        print(f"❌ Ошибка загрузки RSS: {response.status_code}")
+        return None
+
+    feed = feedparser.parse(response.content)
+    print(f"✅ Найдено записей: {len(feed.entries)}")
+
+    if not feed.entries:
+        print("❗ RSS пуст, возможно временно недоступен")
+        return None
+
+    entry = feed.entries[0]
     return {
         "title": entry.title,
         "link": entry.link,
         "published": entry.published,
-        "summary": BeautifulSoup(entry.summary, "html.parser").get_text(),
+        "summary": entry.summary
     }
 
 
