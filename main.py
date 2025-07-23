@@ -22,22 +22,21 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 def fetch_latest_article():
     print("🔁 Загружаем RSS-фид...")
     response = requests.get(WOWHEAD_RSS, headers=HEADERS)
+
+    if response.status_code != 200:
+        print(f"❌ Ошибка загрузки RSS: {response.status_code}")
+        return None
+
     print(f"🧾 Заголовки ответа: {response.headers}")
     print(f"🔍 Content-Type: {response.headers.get('Content-Type')}")
     print("📄 Первые 500 символов ответа:")
     print(response.text[:500])
-    exit(0)  # Временно для отладки
-    print("🔁 Загружаем RSS-фид...")
-    response = requests.get(WOWHEAD_RSS, headers=HEADERS)
-    if response.status_code != 200:
-        print(f"❌ Ошибка загрузки RSS: {response.status_code}")
-        return None
 
     feed = feedparser.parse(response.content)
     print(f"✅ Найдено записей: {len(feed.entries)}")
 
     if not feed.entries:
-        print("❗ RSS пуст, возможно временно недоступен")
+        print("❗ RSS пуст, возможно временно недоступен или формат не распознан")
         return None
 
     entry = feed.entries[0]
