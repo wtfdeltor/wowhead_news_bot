@@ -87,9 +87,6 @@ def fetch_articles():
         full_soup = BeautifulSoup(full_html, "html.parser")
         post_container = full_soup.find("div", class_="post")
 
-        img_tag = post_container.find("img") if post_container else None
-        image_url = img_tag["src"] if img_tag else None
-
         summary_html = entry.summary
         if "<br /><br />" in summary_html:
             preview_html = summary_html.split("<br /><br />")[0]
@@ -103,7 +100,7 @@ def fetch_articles():
             "link": entry.link,
             "published": entry.published,
             "preview": preview_text,
-            "image": image_url,
+            "image": None,
         })
 
     return new_articles
@@ -113,12 +110,13 @@ def build_instant_view_url(link):
 
 def post_to_telegram(title, iv_link, preview, image_url):
     caption = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
-
+    
     if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 5] + "..."
         caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
 
     if image_url:
+        # Используем sendPhoto для сообщений с изображением
         response = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto",
             data={
@@ -126,10 +124,11 @@ def post_to_telegram(title, iv_link, preview, image_url):
                 "photo": image_url,
                 "caption": caption,
                 "parse_mode": "HTML",
-                "disable_notification": False,
+                "disable_notification": False,  # Можно добавить, если нужно
             },
         )
     else:
+        # Для сообщений без изображения используем sendMessage
         response = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
             data={
@@ -139,7 +138,7 @@ def post_to_telegram(title, iv_link, preview, image_url):
                 "disable_web_page_preview": False,
             },
         )
-
+    
     print(f"📤 Статус отправки в Telegram: {response.status_code}")
     if response.status_code == 200:
         print("✅ Пост отправлен успешно")
@@ -154,7 +153,7 @@ def main():
 
     for idx, article in enumerate(articles):
         iv_link = build_instant_view_url(article["link"])
-        post_to_telegram(article["title"], iv_link, article["preview"], article["image"])
+        post_to_telegram(article["title"], iv_link, article["preview"], None)
         mark_as_posted(article["link"])
         if idx < len(articles) - 1:
             print(f"⏳ Ждём {POST_DELAY_SECONDS} секунд перед следующим постом...")
