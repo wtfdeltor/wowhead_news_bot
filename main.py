@@ -53,7 +53,7 @@ def translate_text(text):
     data = {
         "targetLanguageCode": "ru",
         "texts": [text],
-        "folderId": "b1ge7xxxxxxx"  # Укажи свой Folder ID
+        "folderId": "b1g6651rmqhp53uc973q"  # Укажи свой Folder ID
     }
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
