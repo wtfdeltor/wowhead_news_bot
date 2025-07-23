@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup, NavigableString
 from datetime import datetime
 import re
 import html
+import time
 
 # Константы и переменные окружения
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -17,6 +18,8 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
+
+POST_DELAY_SECONDS = 60
 
 def clean_html_preserve_spaces(html_text):
     soup = BeautifulSoup(html_text, "html.parser")
@@ -147,10 +150,13 @@ def main():
         print("⚠️ Новых статей нет — завершение скрипта.")
         return
 
-    for article in articles:
+    for idx, article in enumerate(articles):
         iv_link = build_instant_view_url(article["link"])
         post_to_telegram(article["title"], iv_link, article["preview"], article["image"])
         mark_as_posted(article["link"])
+        if idx < len(articles) - 1:
+            print(f"⏳ Ждём {POST_DELAY_SECONDS} секунд перед следующим постом...")
+            time.sleep(POST_DELAY_SECONDS)
 
 if __name__ == "__main__":
     main()
