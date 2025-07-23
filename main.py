@@ -12,6 +12,9 @@ TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
 NOOBCLUB_RSS = "https://www.noob-club.ru/index.php?type=rss;sa=news;action=.xml"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
+MAX_CAPTION_LENGTH = 1024
+
+
 def fetch_latest_article():
     print("🔁 Загружаем RSS-фид Noob Club...")
     response = requests.get(NOOBCLUB_RSS, headers=HEADERS)
@@ -27,21 +30,32 @@ def fetch_latest_article():
         return None
 
     entry = feed.entries[0]
+    
+    # Загрузка полной статьи
+    full_html = requests.get(entry.link, headers=HEADERS).text
+    full_soup = BeautifulSoup(full_html, "html.parser")
+    
+    # Находим контент поста
+    post_container = full_soup.find("div", class_="post")
+    full_text = post_container.get_text(separator="\n", strip=True) if post_container else entry.summary
 
-    soup = BeautifulSoup(entry.summary, "html.parser")
-    img_tag = soup.find("img")
+    # Извлекаем первую картинку
+    img_tag = full_soup.find("div", class_="post").find("img") if post_container else None
     image_url = img_tag["src"] if img_tag else None
 
     return {
         "title": entry.title,
         "link": entry.link,
         "published": entry.published,
-        "summary": soup.get_text(),
+        "summary": full_text,
         "image": image_url,
     }
 
+
 def post_to_telegram(title, link, summary, image_url):
-    preview = f"<b>{title}</b>\n{summary[:200]}...\n<a href='{link}'>Читать полностью</a>"
+    safe_summary = summary[:MAX_CAPTION_LENGTH - 100]  # запас под ссылки и форматирование
+    preview = f"<b>{title}</b>\n{safe_summary}...\n<a href='{link}'>Читать полностью</a>"
+
     if image_url:
         response = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto",
@@ -63,6 +77,7 @@ def post_to_telegram(title, link, summary, image_url):
             },
         )
     print(f"📤 Статус отправки в Telegram: {response.status_code}")
+
 
 if __name__ == "__main__":
     article = fetch_latest_article()
