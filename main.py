@@ -43,7 +43,7 @@ def fetch_latest_article():
 
 def translate_text(text):
     print("🌐 Перевод через LibreTranslate...")
-    url = "https://libretranslate.de/translate"
+    url = "https://libretranslate.com/translate"  # стабильный публичный хост
     payload = {
         "q": text,
         "source": "en",
@@ -52,6 +52,9 @@ def translate_text(text):
     }
     response = requests.post(url, json=payload)
     response.raise_for_status()
+    if "application/json" not in response.headers.get("Content-Type", ""):
+        print("❌ Неожиданный ответ, не JSON:", response.text[:500])
+        raise Exception("Сервис перевода вернул не JSON")
     try:
         return response.json()["translatedText"]
     except Exception as e:
