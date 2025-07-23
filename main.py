@@ -6,6 +6,7 @@ import os
 from bs4 import BeautifulSoup, NavigableString
 from datetime import datetime
 import re
+import html
 
 # Константы и переменные окружения
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -16,9 +17,8 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 
-
-def clean_html_preserve_spaces(html):
-    soup = BeautifulSoup(html, "html.parser")
+def clean_html_preserve_spaces(html_text):
+    soup = BeautifulSoup(html_text, "html.parser")
     for br in soup.find_all("br"):
         br.replace_with("\n")
 
@@ -27,11 +27,11 @@ def clean_html_preserve_spaces(html):
             tag.replace_with(tag.get_text())
 
     text = soup.get_text(" ", strip=True)
+    text = html.unescape(text)
     text = re.sub(r":cut:", "", text)
     text = re.sub(r'\s+([.,!?;:])', r'\1', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
-
 
 def fetch_latest_article():
     print("🔁 Загружаем RSS-фид Noob Club...")
@@ -74,16 +74,14 @@ def fetch_latest_article():
         "image": image_url,
     }
 
-
 def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
-
 def post_to_telegram(title, iv_link, preview, image_url):
-    caption = f"<b>{title}</b>\n\n{preview}\n\n<a href='{iv_link}'>Читать полностью</a>"
+    caption = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
     if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href='{iv_link}'>Читать полностью</a>") - 3] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n<a href='{iv_link}'>Читать полностью</a>"
+        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 3] + "..."
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
 
     if image_url:
         response = requests.post(
@@ -106,7 +104,6 @@ def post_to_telegram(title, iv_link, preview, image_url):
             },
         )
     print(f"📤 Статус отправки в Telegram: {response.status_code}")
-
 
 if __name__ == "__main__":
     article = fetch_latest_article()
