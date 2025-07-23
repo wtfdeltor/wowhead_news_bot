@@ -3,8 +3,7 @@
 import feedparser
 import requests
 import os
-from bs4 import BeautifulSoup, NavigableString
-from datetime import datetime
+from bs4 import BeautifulSoup
 import re
 import html
 import time
@@ -18,8 +17,8 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
-
 POST_DELAY_SECONDS = 15
+MAX_SEEN_LINKS = 5
 
 def clean_html_preserve_spaces(html_text):
     soup = BeautifulSoup(html_text, "html.parser")
@@ -53,21 +52,26 @@ def clean_html_preserve_spaces(html_text):
 
     return text
 
-def has_been_posted(link):
+def load_seen_links():
     if not os.path.exists(SEEN_LINKS_FILE):
-        return False
+        return []
     with open(SEEN_LINKS_FILE, "r") as f:
-        return link in f.read()
+        return [line.strip() for line in f.readlines() if line.strip()]
 
-def mark_as_posted(link):
-    with open(SEEN_LINKS_FILE, "a") as f:
-        f.write(link + "\n")
+def save_seen_links(links):
+    with open(SEEN_LINKS_FILE, "w") as f:
+        f.write("\n".join(links[-MAX_SEEN_LINKS:]) + "\n")
+
+def has_been_posted(link, seen_links):
+    return link.strip() in seen_links
 
 def fetch_articles():
     print("🔁 Загружаем RSS-фид Noob Club...")
-    response = requests.get(NOOBCLUB_RSS, headers=HEADERS)
-    if response.status_code != 200:
-        print(f"❌ Ошибка загрузки RSS: {response.status_code}")
+    try:
+        response = requests.get(NOOBCLUB_RSS, headers=HEADERS)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"❌ Ошибка загрузки RSS: {e}")
         return []
 
     feed = feedparser.parse(response.content)
@@ -77,15 +81,12 @@ def fetch_articles():
         print("❗ RSS пуст или не распознан")
         return []
 
+    seen_links = load_seen_links()
     new_articles = []
 
     for entry in reversed(feed.entries):
-        if has_been_posted(entry.link):
+        if has_been_posted(entry.link, seen_links):
             continue
-
-        full_html = requests.get(entry.link, headers=HEADERS).text
-        full_soup = BeautifulSoup(full_html, "html.parser")
-        post_container = full_soup.find("div", class_="post")
 
         summary_html = entry.summary
         if "<br /><br />" in summary_html:
@@ -110,40 +111,40 @@ def build_instant_view_url(link):
 
 def post_to_telegram(title, iv_link, preview, image_url):
     caption = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
-    
+
     if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 5] + "..."
         caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
 
-    if image_url:
-        # Используем sendPhoto для сообщений с изображением
-        response = requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto",
-            data={
-                "chat_id": TELEGRAM_CHANNEL,
-                "photo": image_url,
-                "caption": caption,
-                "parse_mode": "HTML",
-                "disable_notification": False,  # Можно добавить, если нужно
-            },
-        )
-    else:
-        # Для сообщений без изображения используем sendMessage
-        response = requests.post(
-            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-            data={
-                "chat_id": TELEGRAM_CHANNEL,
-                "text": caption,
-                "parse_mode": "HTML",
-                "disable_web_page_preview": False,
-            },
-        )
-    
-    print(f"📤 Статус отправки в Telegram: {response.status_code}")
-    if response.status_code == 200:
-        print("✅ Пост отправлен успешно")
-    else:
-        print(f"❌ Ошибка: {response.json()}")
+    try:
+        if image_url:
+            response = requests.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto",
+                data={
+                    "chat_id": TELEGRAM_CHANNEL,
+                    "photo": image_url,
+                    "caption": caption,
+                    "parse_mode": "HTML",
+                    "disable_notification": False,
+                },
+            )
+        else:
+            response = requests.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                data={
+                    "chat_id": TELEGRAM_CHANNEL,
+                    "text": caption,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": False,
+                },
+            )
+        print(f"📤 Статус отправки в Telegram: {response.status_code}")
+        if response.status_code == 200:
+            print("✅ Пост отправлен успешно")
+        else:
+            print(f"❌ Ошибка: {response.json()}")
+    except requests.RequestException as e:
+        print(f"❌ Ошибка при отправке: {e}")
 
 def main():
     articles = fetch_articles()
@@ -151,10 +152,14 @@ def main():
         print("⚠️ Новых статей нет — завершение скрипта.")
         return
 
+    seen_links = load_seen_links()
+
     for idx, article in enumerate(articles):
         iv_link = build_instant_view_url(article["link"])
-        post_to_telegram(article["title"], iv_link, article["preview"], None)
-        mark_as_posted(article["link"])
+        post_to_telegram(article["title"], iv_link, article["preview"], article["image"])
+        seen_links.append(article["link"].strip())
+        save_seen_links(seen_links)
+
         if idx < len(articles) - 1:
             print(f"⏳ Ждём {POST_DELAY_SECONDS} секунд перед следующим постом...")
             time.sleep(POST_DELAY_SECONDS)
