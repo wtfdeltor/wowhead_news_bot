@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-GITHUB_PAGES_URL = os.getenv("GITHUB_PAGES_URL")  # например: https://username.github.io/wow
+GITHUB_PAGES_URL = os.getenv("PAGES_URL")  # например: https://username.github.io/wow
 
 openai.api_key = OPENAI_KEY
 
