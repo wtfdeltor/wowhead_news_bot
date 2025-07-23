@@ -37,14 +37,17 @@ def fetch_latest_article():
 
     # Находим контент поста
     post_container = full_soup.find("div", class_="post")
-    full_text = post_container.get_text(separator="\n", strip=True) if post_container else entry.summary
-
-    # Извлекаем первый абзац как превью
-    first_paragraph = post_container.find("p").get_text(strip=True) if post_container and post_container.find("p") else entry.summary
 
     # Извлекаем первую картинку
     img_tag = post_container.find("img") if post_container else None
     image_url = img_tag["src"] if img_tag else None
+    if image_url and image_url.startswith("/"):
+        image_url = "https://www.noob-club.ru" + image_url
+
+    # Извлекаем первый абзац как превью
+    first_paragraph = post_container.find("p").get_text(strip=True) if post_container and post_container.find("p") else entry.summary
+    if len(first_paragraph) > 800:
+        first_paragraph = first_paragraph[:797] + "..."
 
     return {
         "title": entry.title,
@@ -56,8 +59,10 @@ def fetch_latest_article():
 
 
 def post_to_telegram(title, link, preview, image_url):
-    safe_preview = preview[:MAX_CAPTION_LENGTH - 100]  # запас под ссылки и форматирование
-    caption = f"<b>{title}</b>\n{safe_preview}\n<a href='{link}'>Читать полностью</a>"
+    caption = f"<b>{title}</b>\n{preview}\n<a href='{link}'>Читать полностью</a>"
+    if len(caption) > MAX_CAPTION_LENGTH:
+        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href='{link}'>Читать полностью</a>") - 3] + "..."
+        caption = f"<b>{title}</b>\n{preview_cut}\n<a href='{link}'>Читать полностью</a>"
 
     if image_url:
         response = requests.post(
