@@ -1,5 +1,3 @@
 feedparser
-requests
-openai
 beautifulsoup4
-yandexcloud==0.201.0
+requests
