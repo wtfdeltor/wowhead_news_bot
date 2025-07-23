@@ -54,6 +54,7 @@ def clean_html_preserve_spaces(html_text):
 
 def load_seen_links():
     if not os.path.exists(SEEN_LINKS_FILE):
+        open(SEEN_LINKS_FILE, "w").close()
         return []
     with open(SEEN_LINKS_FILE, "r") as f:
         return [line.strip() for line in f.readlines() if line.strip()]
@@ -117,27 +118,15 @@ def post_to_telegram(title, iv_link, preview, image_url):
         caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
 
     try:
-        if image_url:
-            response = requests.post(
-                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto",
-                data={
-                    "chat_id": TELEGRAM_CHANNEL,
-                    "photo": image_url,
-                    "caption": caption,
-                    "parse_mode": "HTML",
-                    "disable_notification": False,
-                },
-            )
-        else:
-            response = requests.post(
-                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-                data={
-                    "chat_id": TELEGRAM_CHANNEL,
-                    "text": caption,
-                    "parse_mode": "HTML",
-                    "disable_web_page_preview": False,
-                },
-            )
+        response = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data={
+                "chat_id": TELEGRAM_CHANNEL,
+                "text": caption,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": False,
+            },
+        )
         print(f"📤 Статус отправки в Telegram: {response.status_code}")
         if response.status_code == 200:
             print("✅ Пост отправлен успешно")
