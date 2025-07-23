@@ -30,9 +30,7 @@ def clean_html_preserve_spaces(html_text):
     text = soup.get_text(" ", strip=True)
     text = html.unescape(text)
 
-    # Очистка лишних html-сущностей
-    text = text.replace("quotquot", '"')
-    text = re.sub(r"(quot)+", '"', text)
+    # Очистка мусора
     text = re.sub(r":cut:", "", text)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
