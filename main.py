@@ -1,4 +1,4 @@
-# wowhead_news_bot_mvp (бесплатный перевод через deeplx.owo.network)
+# wowhead_news_bot_mvp (бесплатный перевод через LibreTranslate)
 
 import feedparser
 import requests
@@ -42,22 +42,20 @@ def fetch_latest_article():
     }
 
 def translate_text(text):
-    print("🌐 Перевод через DeepL (deeplx.owo.network)...")
-    url = "https://deeplx.owo.network"  # правильный адрес
-    headers = {"Content-Type": "application/json"}
+    print("🌐 Перевод через LibreTranslate...")
+    url = "https://translate.argosopentech.com/translate"
     payload = {
-        "text": text,
-        "source_lang": "EN",
-        "target_lang": "RU"
+        "q": text,
+        "source": "en",
+        "target": "ru",
+        "format": "text"
     }
-
-    response = requests.post(url, headers=headers, json=payload)
+    response = requests.post(url, json=payload)
     response.raise_for_status()
-
     try:
-        return response.json()["data"]
+        return response.json()["translatedText"]
     except Exception as e:
-        print("❌ Ошибка обработки ответа:", response.text)
+        print("❌ Ошибка разбора ответа от LibreTranslate:", response.text)
         raise e
 
 def generate_html(title, content, original_link):
