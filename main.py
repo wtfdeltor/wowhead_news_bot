@@ -50,7 +50,10 @@ def translate_text(text):
         "target": "ru",
         "format": "text"
     }
-    response = requests.post(url, json=payload)
+    headers = {
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, json=payload, headers=headers)
     response.raise_for_status()
     if "application/json" not in response.headers.get("Content-Type", ""):
         print("❌ Неожиданный ответ, не JSON:", response.text[:500])
