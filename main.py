@@ -32,20 +32,17 @@ def clean_html_preserve_spaces(html_text):
 
     raw_text = soup.get_text(" ", strip=True)
 
-    # Удаление двойных html-энтити до декодирования
     raw_text = raw_text.replace("quotquot", '')
     raw_text = raw_text.replace("&#039&#039", "'")
     raw_text = raw_text.replace("#039#039", "'")
 
     text = html.unescape(raw_text)
 
-    # Очистка мусора
     text = re.sub(r":cut:", "", text)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
     text = re.sub(r"\s+", " ", text).strip()
 
-    # Явная замена нестандартных кавычек и апострофов
     text = text.replace("\u201c", '"').replace("\u201d", '"')
     text = text.replace("\u2018", "'").replace("\u2019", "'")
     text = text.replace("&quot;", '"')
@@ -90,11 +87,6 @@ def fetch_articles():
         full_soup = BeautifulSoup(full_html, "html.parser")
         post_container = full_soup.find("div", class_="post")
 
-        img_tag = post_container.find("img") if post_container else None
-        image_url = img_tag["src"] if img_tag else None
-        if image_url and image_url.startswith("/"):
-            image_url = "https://www.noob-club.ru" + image_url
-
         summary_html = entry.summary
         if "<br /><br />" in summary_html:
             preview_html = summary_html.split("<br /><br />")[0]
@@ -108,7 +100,7 @@ def fetch_articles():
             "link": entry.link,
             "published": entry.published,
             "preview": preview_text,
-            "image": image_url,
+            "image": None,
         })
 
     return new_articles
@@ -117,12 +109,11 @@ def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
 def post_to_telegram(title, iv_link, preview, image_url):
-    invisible_char = '\u200E'
-    message = f"<a href=\"{image_url}\">{invisible_char}</a>\n<b>{title}</b>\n\n{preview}\n\n{iv_link}" if image_url else f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
+    message = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
 
     if len(message) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 5] + "..."
-        message = f"<a href=\"{image_url}\">{invisible_char}</a>\n<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}" if image_url else f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
+        message = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
 
     response = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
@@ -143,7 +134,7 @@ def main():
 
     for idx, article in enumerate(articles):
         iv_link = build_instant_view_url(article["link"])
-        post_to_telegram(article["title"], iv_link, article["preview"], article["image"])
+        post_to_telegram(article["title"], iv_link, article["preview"], None)
         mark_as_posted(article["link"])
         if idx < len(articles) - 1:
             print(f"⏳ Ждём {POST_DELAY_SECONDS} секунд перед следующим постом...")
