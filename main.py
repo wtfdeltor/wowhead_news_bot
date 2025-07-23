@@ -3,7 +3,7 @@
 import feedparser
 import requests
 import os
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 from datetime import datetime
 import re
 
@@ -19,6 +19,11 @@ def clean_html_preserve_spaces(html):
     soup = BeautifulSoup(html, "html.parser")
     for br in soup.find_all("br"):
         br.replace_with("\n")
+
+    for tag in soup.find_all("a"):
+        if tag.string:
+            tag.replace_with(NavigableString(tag.get_text()))
+
     text = soup.get_text(" ", strip=True)
     return re.sub(r'\s+', ' ', text).strip()
 
