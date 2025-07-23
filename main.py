@@ -22,10 +22,12 @@ def clean_html_preserve_spaces(html):
 
     for tag in soup.find_all("a"):
         if tag.string:
-            tag.replace_with(NavigableString(tag.get_text()))
+            tag.replace_with(tag.get_text())
 
     text = soup.get_text(" ", strip=True)
-    return re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r'\s+([.,!?;:])', r'\1', text)  # удаляем пробелы перед знаками препинания
+    text = re.sub(r'\s+', ' ', text).strip()       # нормализуем пробелы
+    return text
 
 def fetch_latest_article():
     print("🔁 Загружаем RSS-фид Noob Club...")
