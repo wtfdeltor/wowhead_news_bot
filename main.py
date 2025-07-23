@@ -87,7 +87,11 @@ def post_to_telegram(title, link, summary):
 
 
 if __name__ == "__main__":
-    article = fetch_latest_article()
+article = fetch_latest_article()
+if not article:
+    print("⚠️ Новостей нет — завершение скрипта.")
+    exit(0)
+
     translated_title = translate_text(article["title"])
     translated_summary = translate_text(article["summary"])
     filename = generate_html(translated_title, translated_summary, article["link"])
