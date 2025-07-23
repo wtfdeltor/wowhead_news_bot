@@ -48,8 +48,12 @@ def fetch_latest_article():
     }
 
 
+from openai import OpenAI
+
+client = OpenAI(api_key=OPENAI_KEY)
+
 def translate_text(text):
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "Переведи следующий текст на русский. Сохрани стиль и термины WoW."},
