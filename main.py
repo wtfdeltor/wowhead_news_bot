@@ -15,7 +15,7 @@ GITHUB_PAGES_URL = os.getenv("PAGES_URL")  # например: https://username.
 
 openai.api_key = OPENAI_KEY
 
-WOWHEAD_RSS = "https://www.wowhead.com/news/rss"
+WOWHEAD_RSS = "https://www.wowhead.com/news/rss/all"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 
