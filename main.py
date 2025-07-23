@@ -46,7 +46,7 @@ def fetch_latest_article():
 
 def translate_text(text):
     print("🌐 Перевод через Yandex Translate API...")
-    url = "https://translate.api.cloud.yandex.net/translate/v2/translate"
+    url = "https://translate.api.cloud.yandex.net"
     headers = {
         "Authorization": f"Api-Key {YANDEX_API_KEY}",
         "Content-Type": "application/json"
