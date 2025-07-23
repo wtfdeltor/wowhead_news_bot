@@ -117,27 +117,41 @@ def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
 def post_to_telegram(title, iv_link, preview, image_url):
-    if image_url:
-        iv_embed = f'<a href="{image_url}">&#8205;</a>'
-    else:
-        iv_embed = ""
+    media_group = []
 
-    caption = f"{iv_embed}<b>{title}</b>\n\n{preview}\n\n{iv_link}"
-
+    caption = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
     if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"{iv_embed}<b>{title}</b>\n\n{iv_link}") - 3] + "..."
-        caption = f"{iv_embed}<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
+        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 3] + "..."
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
+
+    if image_url:
+        media_group.append({
+            "type": "photo",
+            "media": image_url,
+            "caption": caption,
+            "parse_mode": "HTML"
+        })
+    else:
+        response = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data={
+                "chat_id": TELEGRAM_CHANNEL,
+                "text": caption,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": False,
+            },
+        )
+        print(f"📤 Статус отправки в Telegram: {response.status_code}")
+        return
 
     response = requests.post(
-        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-        data={
+        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMediaGroup",
+        json={
             "chat_id": TELEGRAM_CHANNEL,
-            "text": caption,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": False,
+            "media": media_group,
         },
     )
-    print(f"📤 Статус отправки в Telegram: {response.status_code}")
+    print(f"📤 Статус отправки группы в Telegram: {response.status_code}")
 
 def main():
     articles = fetch_articles()
