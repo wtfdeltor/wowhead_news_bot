@@ -34,7 +34,7 @@ def clean_html_preserve_spaces(html):
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-def fetch_latest_article(index=1):
+def fetch_latest_article():
     print("🔁 Загружаем RSS-фид Noob Club...")
     response = requests.get(NOOBCLUB_RSS, headers=HEADERS)
     if response.status_code != 200:
@@ -44,11 +44,11 @@ def fetch_latest_article(index=1):
     feed = feedparser.parse(response.content)
     print(f"✅ Найдено записей: {len(feed.entries)}")
 
-    if not feed.entries or index >= len(feed.entries):
-        print("❗ RSS пуст или индекс вне диапазона")
+    if not feed.entries:
+        print("❗ RSS пуст или не распознан")
         return None
 
-    entry = feed.entries[index]
+    entry = feed.entries[0]
 
     # Загрузка полной статьи
     full_html = requests.get(entry.link, headers=HEADERS).text
