@@ -19,7 +19,7 @@ MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
 
-POST_DELAY_SECONDS = 60
+POST_DELAY_SECONDS = 15
 
 def clean_html_preserve_spaces(html_text):
     soup = BeautifulSoup(html_text, "html.parser")
