@@ -109,22 +109,41 @@ def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
 def post_to_telegram(title, iv_link, preview, image_url):
-    message = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
-
-    if len(message) > MAX_CAPTION_LENGTH:
+    caption = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
+    
+    if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 5] + "..."
-        message = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
 
-    response = requests.post(
-        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-        data={
-            "chat_id": TELEGRAM_CHANNEL,
-            "text": message,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": False,
-        },
-    )
+    if image_url:
+        # Используем sendPhoto для сообщений с изображением
+        response = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto",
+            data={
+                "chat_id": TELEGRAM_CHANNEL,
+                "photo": image_url,
+                "caption": caption,
+                "parse_mode": "HTML",
+                "disable_notification": False,  # Можно добавить, если нужно
+            },
+        )
+    else:
+        # Для сообщений без изображения используем sendMessage
+        response = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data={
+                "chat_id": TELEGRAM_CHANNEL,
+                "text": caption,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": False,
+            },
+        )
+    
     print(f"📤 Статус отправки в Telegram: {response.status_code}")
+    if response.status_code == 200:
+        print("✅ Пост отправлен успешно")
+    else:
+        print(f"❌ Ошибка: {response.json()}")
 
 def main():
     articles = fetch_articles()
