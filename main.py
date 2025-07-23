@@ -1,4 +1,4 @@
-# wowhead_news_bot_mvp (бесплатный перевод через deeplx.org)
+# wowhead_news_bot_mvp (бесплатный перевод через deeplx.owo.network)
 
 import feedparser
 import requests
@@ -42,8 +42,8 @@ def fetch_latest_article():
     }
 
 def translate_text(text):
-    print("🌐 Перевод через DeepL (deeplx.org)...")
-    url = "https://www.deeplx.org/translate"
+    print("🌐 Перевод через DeepL (deeplx.owo.network)...")
+    url = "https://deeplx.owo.network/translate"
     headers = {"Content-Type": "application/json"}
     payload = {
         "text": text,
