@@ -14,13 +14,14 @@ TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
 NOOBCLUB_RSS = "https://www.noob-club.ru/index.php?type=rss;sa=news;action=.xml"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-MAX_CAPTION_LENGTH = 1024
-IV_HASH = "fed000eccaa3ad"
-SEEN_LINKS_FILE = "seen_links.txt"
-POST_DELAY_SECONDS = 15
-MAX_SEEN_LINKS = 5
+MAX_CAPTION_LENGTH = 1024  # Максимально допустимая длина текста в посте Telegram
+IV_HASH = "fed000eccaa3ad"  # Хэш шаблона Instant View
+SEEN_LINKS_FILE = "seen_links.txt"  # Файл для хранения уже опубликованных ссылок
+POST_DELAY_SECONDS = 15  # Задержка между публикациями
+MAX_SEEN_LINKS = 5  # Максимум хранимых ссылок (по количеству доступных в RSS)
 
 def clean_html_preserve_spaces(html_text):
+    # Удаляет теги, сохраняя читаемый текст
     soup = BeautifulSoup(html_text, "html.parser")
     for br in soup.find_all("br"):
         br.replace_with("\n")
@@ -31,6 +32,7 @@ def clean_html_preserve_spaces(html_text):
 
     raw_text = soup.get_text(" ", strip=True)
 
+    # Удаление мусора и лишних кодов
     raw_text = raw_text.replace("quotquot", '')
     raw_text = raw_text.replace("&#039&#039", "'")
     raw_text = raw_text.replace("#039#039", "'")
@@ -42,6 +44,7 @@ def clean_html_preserve_spaces(html_text):
     text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
     text = re.sub(r"\s+", " ", text).strip()
 
+    # Нормализация кавычек и апострофов
     text = text.replace("\u201c", '"').replace("\u201d", '"')
     text = text.replace("\u2018", "'").replace("\u2019", "'")
     text = text.replace("&quot;", '"')
@@ -53,6 +56,7 @@ def clean_html_preserve_spaces(html_text):
     return text
 
 def load_seen_links():
+    # Загружает уже опубликованные ссылки из файла
     if not os.path.exists(SEEN_LINKS_FILE):
         open(SEEN_LINKS_FILE, "w").close()
         return []
@@ -60,6 +64,7 @@ def load_seen_links():
         return [line.strip() for line in f.readlines() if line.strip()]
 
 def save_seen_links(links):
+    # Сохраняет только последние N ссылок в файл
     with open(SEEN_LINKS_FILE, "w") as f:
         f.write("\n".join(links[-MAX_SEEN_LINKS:]) + "\n")
 
@@ -89,6 +94,7 @@ def fetch_articles():
         if has_been_posted(entry.link, seen_links):
             continue
 
+        # Получаем только первый абзац
         summary_html = entry.summary
         if "<br /><br />" in summary_html:
             preview_html = summary_html.split("<br /><br />")[0]
@@ -111,13 +117,16 @@ def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
 def post_to_telegram(title, iv_link, preview, image_url):
-    caption = f"<b>{title}</b>\n\n{preview}\n\n{iv_link}"
+    # Ссылка Instant View скрыта с помощью zero-width space
+    invisible_iv_link = f'<a href="{iv_link}">&#8203;</a>'
+    caption = f"<b>{title}</b>\n\n{preview}\n\n{invisible_iv_link}"
 
     if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{iv_link}") - 5] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{iv_link}"
+        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{invisible_iv_link}") - 5] + "..."
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{invisible_iv_link}"
 
     try:
+        # Используем sendMessage — так Telegram сможет отобразить Instant View
         response = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
             data={
