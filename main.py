@@ -1,8 +1,7 @@
-# wowhead_news_bot_mvp (GitHub Actions Ready Version + RSS Fix)
+# wowhead_news_bot_mvp (YandexGPT версия)
 
 import feedparser
 import requests
-import openai
 import os
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -10,10 +9,9 @@ from bs4 import BeautifulSoup
 # Переменные из GitHub Secrets или .env
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+YANDEX_IAM_TOKEN = os.getenv("YANDEX_IAM_TOKEN")
+YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID")
 GITHUB_PAGES_URL = os.getenv("PAGES_URL")  # например: https://username.github.io/wow
-
-openai.api_key = OPENAI_KEY
 
 WOWHEAD_RSS = "https://www.wowhead.com/news/rss/all"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
@@ -48,19 +46,28 @@ def fetch_latest_article():
     }
 
 
-from openai import OpenAI
-
-client = OpenAI(api_key=OPENAI_KEY)
-
 def translate_text(text):
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "Переведи следующий текст на русский. Сохрани стиль и термины WoW."},
-            {"role": "user", "content": text}
+    url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
+    headers = {
+        "Authorization": f"Bearer {YANDEX_IAM_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "modelUri": f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/latest",
+        "completionOptions": {
+            "stream": False,
+            "temperature": 0.4,
+            "maxTokens": 500
+        },
+        "messages": [
+            {"role": "system", "text": "Переведи следующий текст на русский. Сохрани стиль и термины WoW."},
+            {"role": "user", "text": text}
         ]
-    )
-    return response.choices[0].message.content.strip()
+    }
+    response = requests.post(url, headers=headers, json=data)
+    response.raise_for_status()
+    result = response.json()
+    return result["result"]["alternatives"][0]["message"]["text"].strip()
 
 
 def generate_html(title, content, original_link):
