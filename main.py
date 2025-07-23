@@ -16,6 +16,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
+SEEN_LINKS_FILE = "seen_links.txt"
 
 def clean_html_preserve_spaces(html_text):
     soup = BeautifulSoup(html_text, "html.parser")
@@ -33,46 +34,62 @@ def clean_html_preserve_spaces(html_text):
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-def fetch_latest_article():
+def has_been_posted(link):
+    if not os.path.exists(SEEN_LINKS_FILE):
+        return False
+    with open(SEEN_LINKS_FILE, "r") as f:
+        return link in f.read()
+
+def mark_as_posted(link):
+    with open(SEEN_LINKS_FILE, "a") as f:
+        f.write(link + "\n")
+
+def fetch_articles():
     print("🔁 Загружаем RSS-фид Noob Club...")
     response = requests.get(NOOBCLUB_RSS, headers=HEADERS)
     if response.status_code != 200:
         print(f"❌ Ошибка загрузки RSS: {response.status_code}")
-        return None
+        return []
 
     feed = feedparser.parse(response.content)
     print(f"✅ Найдено записей: {len(feed.entries)}")
 
     if not feed.entries:
         print("❗ RSS пуст или не распознан")
-        return None
+        return []
 
-    entry = feed.entries[0]
+    new_articles = []
 
-    full_html = requests.get(entry.link, headers=HEADERS).text
-    full_soup = BeautifulSoup(full_html, "html.parser")
-    post_container = full_soup.find("div", class_="post")
+    for entry in reversed(feed.entries):
+        if has_been_posted(entry.link):
+            continue
 
-    img_tag = post_container.find("img") if post_container else None
-    image_url = img_tag["src"] if img_tag else None
-    if image_url and image_url.startswith("/"):
-        image_url = "https://www.noob-club.ru" + image_url
+        full_html = requests.get(entry.link, headers=HEADERS).text
+        full_soup = BeautifulSoup(full_html, "html.parser")
+        post_container = full_soup.find("div", class_="post")
 
-    summary_html = entry.summary
-    if "<br /><br />" in summary_html:
-        preview_html = summary_html.split("<br /><br />")[0]
-    else:
-        preview_html = summary_html
+        img_tag = post_container.find("img") if post_container else None
+        image_url = img_tag["src"] if img_tag else None
+        if image_url and image_url.startswith("/"):
+            image_url = "https://www.noob-club.ru" + image_url
 
-    preview_text = clean_html_preserve_spaces(preview_html)
+        summary_html = entry.summary
+        if "<br /><br />" in summary_html:
+            preview_html = summary_html.split("<br /><br />")[0]
+        else:
+            preview_html = summary_html
 
-    return {
-        "title": entry.title,
-        "link": entry.link,
-        "published": entry.published,
-        "preview": preview_text,
-        "image": image_url,
-    }
+        preview_text = clean_html_preserve_spaces(preview_html)
+
+        new_articles.append({
+            "title": entry.title,
+            "link": entry.link,
+            "published": entry.published,
+            "preview": preview_text,
+            "image": image_url,
+        })
+
+    return new_articles
 
 def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
@@ -105,11 +122,16 @@ def post_to_telegram(title, iv_link, preview, image_url):
         )
     print(f"📤 Статус отправки в Telegram: {response.status_code}")
 
-if __name__ == "__main__":
-    article = fetch_latest_article()
-    if not article:
-        print("⚠️ Новостей нет — завершение скрипта.")
-        exit(0)
+def main():
+    articles = fetch_articles()
+    if not articles:
+        print("⚠️ Новых статей нет — завершение скрипта.")
+        return
 
-    iv_link = build_instant_view_url(article["link"])
-    post_to_telegram(article["title"], iv_link, article["preview"], article["image"])
+    for article in articles:
+        iv_link = build_instant_view_url(article["link"])
+        post_to_telegram(article["title"], iv_link, article["preview"], article["image"])
+        mark_as_posted(article["link"])
+
+if __name__ == "__main__":
+    main()
