@@ -43,7 +43,7 @@ def fetch_latest_article():
 
 def translate_text(text):
     print("🌐 Перевод через LibreTranslate...")
-    url = "https://libretranslate.com/translate"  # стабильный публичный хост
+    url = "https://libretranslate.de/translate"  # стабильный публичный хост
     payload = {
         "q": text,
         "source": "en",
@@ -51,7 +51,8 @@ def translate_text(text):
         "format": "text"
     }
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
     response = requests.post(url, json=payload, headers=headers)
     response.raise_for_status()
