@@ -43,7 +43,7 @@ def fetch_latest_article():
 
 def translate_text(text):
     print("🌐 Перевод через LibreTranslate...")
-    url = "https://translate.argosopentech.com/translate"
+    url = "https://libretranslate.de/translate"
     payload = {
         "q": text,
         "source": "en",
