@@ -60,10 +60,10 @@ def fetch_latest_article():
     }
 
 def post_to_telegram(title, link, preview, image_url):
-    caption = f"<b>{title}</b>\n{preview}\n<a href='{link}'>Читать полностью</a>"
+    caption = f"<b>{title}</b>\n\n{preview}\n\n<a href='{link}'>Читать полностью</a>"
     if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href='{link}'>Читать полностью</a>") - 3] + "..."
-        caption = f"<b>{title}</b>\n{preview_cut}\n<a href='{link}'>Читать полностью</a>"
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n<a href='{link}'>Читать полностью</a>"
 
     if image_url:
         response = requests.post(
