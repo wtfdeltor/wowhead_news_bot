@@ -27,24 +27,41 @@ def fetch_latest_article():
         return None
 
     entry = feed.entries[0]
+
+    soup = BeautifulSoup(entry.summary, "html.parser")
+    img_tag = soup.find("img")
+    image_url = img_tag["src"] if img_tag else None
+
     return {
         "title": entry.title,
         "link": entry.link,
         "published": entry.published,
-        "summary": BeautifulSoup(entry.summary, "html.parser").get_text(),
+        "summary": soup.get_text(),
+        "image": image_url,
     }
 
-def post_to_telegram(title, link, summary):
+def post_to_telegram(title, link, summary, image_url):
     preview = f"<b>{title}</b>\n{summary[:200]}...\n<a href='{link}'>Читать полностью</a>"
-    response = requests.post(
-        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-        data={
-            "chat_id": TELEGRAM_CHANNEL,
-            "text": preview,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": False,
-        },
-    )
+    if image_url:
+        response = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto",
+            data={
+                "chat_id": TELEGRAM_CHANNEL,
+                "photo": image_url,
+                "caption": preview,
+                "parse_mode": "HTML",
+            },
+        )
+    else:
+        response = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+            data={
+                "chat_id": TELEGRAM_CHANNEL,
+                "text": preview,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": False,
+            },
+        )
     print(f"📤 Статус отправки в Telegram: {response.status_code}")
 
 if __name__ == "__main__":
@@ -53,4 +70,4 @@ if __name__ == "__main__":
         print("⚠️ Новостей нет — завершение скрипта.")
         exit(0)
 
-    post_to_telegram(article["title"], article["link"], article["summary"])
+    post_to_telegram(article["title"], article["link"], article["summary"], article["image"])
