@@ -43,7 +43,7 @@ def clean_html_preserve_spaces(html_text):
     text = text.replace("&#039;", "'")
     text = text.replace("#039", "'")
     text = re.sub(r"'+", "'", text)
-    text = re.sub(r'"'+", '"', text)
+    text = re.sub(r'"{2,}', '"', text)
 
     return text
 
