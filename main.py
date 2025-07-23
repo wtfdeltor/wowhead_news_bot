@@ -31,6 +31,8 @@ def clean_html_preserve_spaces(html_text):
     text = html.unescape(text)
 
     # Очистка лишних html-сущностей
+    text = text.replace("quotquot", '"')
+    text = re.sub(r"(quot)+", '"', text)
     text = re.sub(r":cut:", "", text)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
@@ -43,7 +45,7 @@ def clean_html_preserve_spaces(html_text):
     text = text.replace("&#039;", "'")
     text = text.replace("#039", "'")
     text = re.sub(r"'+", "'", text)
-    text = re.sub(r'"+', '"', text)
+    text = re.sub(r'"'+", '"', text)
 
     return text
 
