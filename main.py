@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
 YANDEX_API_KEY = os.getenv("YANDEX_API_KEY")
+YANDEX_FOLDER_ID = os.getenv("YANDEX_FOLDER_ID")
 GITHUB_PAGES_URL = os.getenv("PAGES_URL")  # например: https://username.github.io/wow
 
 WOWHEAD_RSS = "https://www.wowhead.com/news/rss/all"
@@ -53,7 +54,7 @@ def translate_text(text):
     data = {
         "targetLanguageCode": "ru",
         "texts": [text],
-        "folderId": "b1g6651rmqhp53uc973q"  # Укажи свой Folder ID
+        "folderId": YANDEX_FOLDER_ID
     }
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
