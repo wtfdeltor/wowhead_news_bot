@@ -84,9 +84,27 @@ def create_telegraph_page(title, html):
     telegraph = Telegraph()
     telegraph.create_account(short_name="noobclubbot")
 
+    allowed_tags = {
+        "p", "strong", "em", "u", "a", "ul", "ol", "li",
+        "blockquote", "code", "pre", "h3", "h4", "figure", "figcaption", "br", "img"
+    }
+
     content = BeautifulSoup(html, "html.parser")
-    for a in content.find_all("a"):
-        a.attrs = {k: v for k, v in a.attrs.items() if k in ("href",)}
+
+    for tag in content.find_all(True):
+        if tag.name in ["div", "span"]:
+            tag.name = "p"
+        elif tag.name not in allowed_tags:
+            tag.unwrap()
+
+        tag.attrs = {k: v for k, v in tag.attrs.items() if k in ("href", "src", "alt")}
+
+        if tag.name == "img":
+            figure = content.new_tag("figure")
+            figcaption = content.new_tag("figcaption")
+            figcaption.string = tag.get("alt", "")
+            tag.wrap(figure)
+            figure.append(figcaption)
 
     response = telegraph.create_page(
         title=title,
