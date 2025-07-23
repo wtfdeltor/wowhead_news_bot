@@ -31,6 +31,7 @@ def clean_html_preserve_spaces(html_text):
     text = html.unescape(text)
     text = re.sub(r":cut:", "", text)
     text = re.sub(r'\s+([.,!?;:])', r'\1', text)
+    text = re.sub(r'([.,!?;:])(\w)', r'\1 \2', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
