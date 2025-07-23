@@ -43,16 +43,22 @@ def fetch_latest_article():
 
 def translate_text(text):
     print("🌐 Перевод через DeepL (deeplx.owo.network)...")
-    url = "https://deeplx.owo.network/translate"
+    url = "https://deeplx.owo.network"  # правильный адрес
     headers = {"Content-Type": "application/json"}
     payload = {
         "text": text,
         "source_lang": "EN",
         "target_lang": "RU"
     }
+
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
-    return response.json()["data"]
+
+    try:
+        return response.json()["data"]
+    except Exception as e:
+        print("❌ Ошибка обработки ответа:", response.text)
+        raise e
 
 def generate_html(title, content, original_link):
     safe_title = title.lower().replace(" ", "-").replace(".", "").replace("/", "-")[:60]
