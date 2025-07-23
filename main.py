@@ -1,4 +1,4 @@
-# wowhead_news_bot_mvp (бесплатный перевод через LibreTranslate)
+# wowhead_news_bot_mvp (бесплатный перевод через deeplx.org)
 
 import feedparser
 import requests
@@ -12,7 +12,6 @@ TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
 GITHUB_PAGES_URL = os.getenv("PAGES_URL")  # например: https://username.github.io/wow
 WOWHEAD_RSS = "https://www.wowhead.com/news/rss/all"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
-
 
 def fetch_latest_article():
     print("🔁 Загружаем RSS-фид...")
@@ -42,7 +41,6 @@ def fetch_latest_article():
         "summary": BeautifulSoup(entry.summary, "html.parser").get_text(),
     }
 
-
 def translate_text(text):
     print("🌐 Перевод через DeepL (deeplx.org)...")
     url = "https://www.deeplx.org/translate"
@@ -55,7 +53,6 @@ def translate_text(text):
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
     return response.json()["data"]
-
 
 def generate_html(title, content, original_link):
     safe_title = title.lower().replace(" ", "-").replace(".", "").replace("/", "-")[:60]
@@ -76,7 +73,6 @@ def generate_html(title, content, original_link):
         f.write(html)
     return filename
 
-
 def post_to_telegram(title, link, summary):
     preview = f"<b>{title}</b>\n{summary[:200]}...\n<a href='{link}'>Читать полностью</a>"
     requests.post(
@@ -88,7 +84,6 @@ def post_to_telegram(title, link, summary):
             "disable_web_page_preview": False,
         },
     )
-
 
 if __name__ == "__main__":
     article = fetch_latest_article()
