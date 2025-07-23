@@ -34,7 +34,7 @@ def clean_html_preserve_spaces(html):
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
-def fetch_latest_article(index=0):
+def fetch_latest_article(index=1):
     print("🔁 Загружаем RSS-фид Noob Club...")
     response = requests.get(NOOBCLUB_RSS, headers=HEADERS)
     if response.status_code != 200:
