@@ -1,4 +1,4 @@
-# noobclub_news_bot (интеграция с Telegram + Instant View)
+# noobclub_news_bot (интеграция с Telegram + Telegraph Instant View)
 
 import feedparser
 import requests
@@ -6,6 +6,7 @@ import os
 from bs4 import BeautifulSoup, NavigableString
 from datetime import datetime
 import re
+from telegraph import Telegraph
 
 # Константы и переменные окружения
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -67,19 +68,38 @@ def fetch_latest_article():
 
     preview_text = clean_html_preserve_spaces(preview_html)
 
+    # Полный текст статьи
+    content_html = str(post_container)
+
     return {
         "title": entry.title,
         "link": entry.link,
         "published": entry.published,
         "preview": preview_text,
         "image": image_url,
+        "full_html": content_html,
     }
 
-def post_to_telegram(title, link, preview, image_url):
-    caption = f"<b>{title}</b>\n\n{preview}\n\n<a href='{link}'>Читать полностью</a>"
+def create_telegraph_page(title, html):
+    telegraph = Telegraph()
+    telegraph.create_account(short_name="noobclubbot")
+
+    content = BeautifulSoup(html, "html.parser")
+    for a in content.find_all("a"):
+        a.attrs = {k: v for k, v in a.attrs.items() if k in ("href",)}
+
+    response = telegraph.create_page(
+        title=title,
+        html_content=str(content),
+        author_name="Noob Club"
+    )
+    return f"https://telegra.ph/{response['path']}"
+
+def post_to_telegram(title, iv_link, preview, image_url):
+    caption = f"<b>{title}</b>\n\n{preview}\n\n<a href='{iv_link}'>Читать полностью</a>"
     if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href='{link}'>Читать полностью</a>") - 3] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n<a href='{link}'>Читать полностью</a>"
+        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href='{iv_link}'>Читать полностью</a>") - 3] + "..."
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n<a href='{iv_link}'>Читать полностью</a>"
 
     if image_url:
         response = requests.post(
@@ -109,4 +129,5 @@ if __name__ == "__main__":
         print("⚠️ Новостей нет — завершение скрипта.")
         exit(0)
 
-    post_to_telegram(article["title"], article["link"], article["preview"], article["image"])
+    iv_link = create_telegraph_page(article["title"], article["full_html"])
+    post_to_telegram(article["title"], iv_link, article["preview"], article["image"])
