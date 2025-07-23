@@ -27,8 +27,14 @@ def clean_html_preserve_spaces(html_text):
         if tag.string:
             tag.replace_with(tag.get_text())
 
-    text = soup.get_text(" ", strip=True)
-    text = html.unescape(text)
+    raw_text = soup.get_text(" ", strip=True)
+
+    # Удаление двойных html-энтити до декодирования
+    raw_text = raw_text.replace("quotquot", '"')
+    raw_text = raw_text.replace("&#039&#039", "'")
+    raw_text = raw_text.replace("#039#039", "'")
+
+    text = html.unescape(raw_text)
 
     # Очистка мусора
     text = re.sub(r":cut:", "", text)
