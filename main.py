@@ -30,31 +30,34 @@ def fetch_latest_article():
         return None
 
     entry = feed.entries[0]
-    
+
     # Загрузка полной статьи
     full_html = requests.get(entry.link, headers=HEADERS).text
     full_soup = BeautifulSoup(full_html, "html.parser")
-    
+
     # Находим контент поста
     post_container = full_soup.find("div", class_="post")
     full_text = post_container.get_text(separator="\n", strip=True) if post_container else entry.summary
 
+    # Извлекаем первый абзац как превью
+    first_paragraph = post_container.find("p").get_text(strip=True) if post_container and post_container.find("p") else entry.summary
+
     # Извлекаем первую картинку
-    img_tag = full_soup.find("div", class_="post").find("img") if post_container else None
+    img_tag = post_container.find("img") if post_container else None
     image_url = img_tag["src"] if img_tag else None
 
     return {
         "title": entry.title,
         "link": entry.link,
         "published": entry.published,
-        "summary": full_text,
+        "preview": first_paragraph,
         "image": image_url,
     }
 
 
-def post_to_telegram(title, link, summary, image_url):
-    safe_summary = summary[:MAX_CAPTION_LENGTH - 100]  # запас под ссылки и форматирование
-    preview = f"<b>{title}</b>\n{safe_summary}...\n<a href='{link}'>Читать полностью</a>"
+def post_to_telegram(title, link, preview, image_url):
+    safe_preview = preview[:MAX_CAPTION_LENGTH - 100]  # запас под ссылки и форматирование
+    caption = f"<b>{title}</b>\n{safe_preview}\n<a href='{link}'>Читать полностью</a>"
 
     if image_url:
         response = requests.post(
@@ -62,7 +65,7 @@ def post_to_telegram(title, link, summary, image_url):
             data={
                 "chat_id": TELEGRAM_CHANNEL,
                 "photo": image_url,
-                "caption": preview,
+                "caption": caption,
                 "parse_mode": "HTML",
             },
         )
@@ -71,7 +74,7 @@ def post_to_telegram(title, link, summary, image_url):
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
             data={
                 "chat_id": TELEGRAM_CHANNEL,
-                "text": preview,
+                "text": caption,
                 "parse_mode": "HTML",
                 "disable_web_page_preview": False,
             },
@@ -85,4 +88,4 @@ if __name__ == "__main__":
         print("⚠️ Новостей нет — завершение скрипта.")
         exit(0)
 
-    post_to_telegram(article["title"], article["link"], article["summary"], article["image"])
+    post_to_telegram(article["title"], article["link"], article["preview"], article["image"])
