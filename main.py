@@ -44,18 +44,17 @@ def fetch_latest_article():
 
 
 def translate_text(text):
-    print("🌐 Перевод через LibreTranslate...")
-    url = "https://libretranslate.de/translate"
+    print("🌐 Перевод через DeepL (deeplx.org)...")
+    url = "https://www.deeplx.org/translate"
     headers = {"Content-Type": "application/json"}
     payload = {
-        "q": text,
-        "source": "en",
-        "target": "ru",
-        "format": "text"
+        "text": text,
+        "source_lang": "EN",
+        "target_lang": "RU"
     }
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
-    return response.json()["translatedText"]
+    return response.json()["data"]
 
 
 def generate_html(title, content, original_link):
