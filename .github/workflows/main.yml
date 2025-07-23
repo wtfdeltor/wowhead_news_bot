@@ -1,37 +1,34 @@
-name: Publish Wowhead News
+name: Автопостинг новостей Noob Club
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"  # Каждые 15 минут
   workflow_dispatch:
 
 jobs:
-  build:
+  post_news:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+    steps:
+      - name: 🔄 Клонируем репозиторий
+        uses: actions/checkout@v4
+
+      - name: 🧠 Восстановление кэша seen_links.txt
+        uses: actions/cache@v4
+        with:
+          path: seen_links.txt
+          key: seen-links-${{ runner.os }}
+
+      - name: 🐍 Установка Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: 📦 Установка зависимостей
+        run: pip install feedparser beautifulsoup4 requests
 
-      - name: Run script
+      - name: 🚀 Запуск скрипта
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GITHUB_PAGES_URL: ${{ secrets.GITHUB_PAGES_URL }}
         run: python main.py
-
-      - name: Push HTML to gh-pages
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git add public/posts || true
-          git commit -m "update articles" || true
-          git push origin HEAD:gh-pages || true
