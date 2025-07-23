@@ -1,4 +1,4 @@
-# wowhead_news_bot_mvp (GitHub Actions Ready Version)
+# wowhead_news_bot_mvp (GitHub Actions Ready Version + RSS Fix)
 
 import feedparser
 import requests
@@ -38,7 +38,7 @@ def fetch_latest_article():
         "title": entry.title,
         "link": entry.link,
         "published": entry.published,
-        "summary": entry.summary
+        "summary": BeautifulSoup(entry.summary, "html.parser").get_text(),
     }
 
 
@@ -87,10 +87,10 @@ def post_to_telegram(title, link, summary):
 
 
 if __name__ == "__main__":
-article = fetch_latest_article()
-if not article:
-    print("⚠️ Новостей нет — завершение скрипта.")
-    exit(0)
+    article = fetch_latest_article()
+    if not article:
+        print("⚠️ Новостей нет — завершение скрипта.")
+        exit(0)
 
     translated_title = translate_text(article["title"])
     translated_summary = translate_text(article["summary"])
