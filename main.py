@@ -17,7 +17,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
-POST_DELAY_SECONDS = 10
+POST_DELAY_SECONDS = 6
 GLOSSARY_FILE = "tags_glossary.yaml"
 
 # Загрузка YAML-глоссария
@@ -52,12 +52,15 @@ def extract_tags_from_description(desc):
     # Категория (первая и единственная), строгий приоритет
     category_matched = None
     for cat, keywords in glossary.get("categories", {}).items():
+        matched = False
         for word in keywords:
-            # Сравниваем с учётом границ слова
-            if re.search(rf"\b{re.escape(word.lower())}\b", desc_lower):
+            pattern = rf"{re.escape(word.lower())}"
+            if re.search(pattern, desc_lower):
                 category_matched = f"#{cat}"
+                matched = True
                 break
-        if category_matched:
+        if matched:
+            break
             break
 
     if category_matched:
