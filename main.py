@@ -11,7 +11,7 @@ import time
 # Константы и переменные окружения
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHANNEL = os.getenv("TELEGRAM_CHANNEL")
-NOOBCLUB_RSS = "https://www.noob-club.ru/index.php?type=rss;sa=news;action=.xml"
+NOOBCLUB_RSS = "https://www.noob-club.ru/rss2.xml"
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 MAX_CAPTION_LENGTH = 1024  # Максимально допустимая длина текста в посте Telegram
