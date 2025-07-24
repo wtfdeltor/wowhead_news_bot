@@ -107,7 +107,7 @@ def post_to_telegram(title, iv_link, preview):
     caption = f"<b>{title}</b>\n{preview}<a href=\"{iv_link}\">\u200b</a>"
     if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n<a href=\"{iv_link}\">\u200b</a>") - 5] + "..."
-        caption = f"<b>{title}</b>\n{preview_cut}\n<a href=\"{iv_link}\">\u200b</a>"
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n<a href=\"{iv_link}\">\u200b</a>"
     response = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
         data={
