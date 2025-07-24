@@ -35,6 +35,15 @@ jobs:
           TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
         run: python main.py
 
+      - name: 📂 Очистка старого кэша
+        run: |
+          echo "::group::Удаление старого кэша"
+          gh extension install actions/gh-actions-cache
+          gh actions-cache delete seen-links-Linux --confirm || true
+          echo "::endgroup::"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 📂 Сохранение кэша seen_links.txt
         uses: actions/cache/save@v4
         with:
