@@ -43,7 +43,6 @@ jobs:
           echo "::group::Удаление старого кэша"
           sudo apt update
           sudo apt install -y gh
-          echo $GH_TOKEN | gh auth login --with-token
           gh extension install actions/gh-actions-cache
           gh actions-cache delete seen-links-Linux --confirm || true
           echo "::endgroup::"
