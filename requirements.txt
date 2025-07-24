@@ -1,4 +1,5 @@
 feedparser
 requests
 beautifulsoup4
-yaml
+telegraph
+pyyaml
