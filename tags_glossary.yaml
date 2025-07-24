@@ -1,41 +1,33 @@
 categories:
   diablo:
   - diablo
-  - санктуарий
+  - новости diablo
   hearthstone:
   - hearthstone
-  - баттлграунд
-  overwatch:
-  - overwatch
-  - омник
-  starcraft:
-  - starcraft
-  - зерг
+  - новости hearthstone
   wow:
   - world of warcraft
   - warcraft
-  - azeroth
-  общее:
-  - blizzard
-  - blizzcon
-  разное: []
+  wow_classic:
+  - world of warcraft classic
+  - mists of pandaria classic
+  overwatch:
+  - overwatch
+  - новости overwatch
+  starcraft:
+  - starcraft
+  - новости starcraft
 keywords:
-  '#PTR11.2':
+  '#PTR':
   - обновление 11.2
   - patch 11.2
-  - на ptr.*11.2
-  '#PvP':
-  - pvp
-  - пвп
-  - арена
-  '#WoW_Classic':
-  - классик
-  - classic wow
-  '#Альтерак':
-  - альтеракская долина
-  '#Призраки_Кареша':
-  - призраки к'?ареша
-  '#Турнир':
-  - турнир
-  - чемпионат
-  - турнир по
+  - ptr.*11.2
+  - ptr
+  '#Пандария':
+  - mists of pandaria
+  - пандария
+  '#ПризракиКареша':
+  - призраки к'ареша
+  - обновление 11.2
+  - patch 11.2
+  - ptr.*11.2
