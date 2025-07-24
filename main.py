@@ -50,15 +50,16 @@ def clean_html_preserve_spaces(html_text):
     text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
     text = text.replace("&quot;", '"').replace("&#039;", "'").replace("#039", "'")
 
-    # Исправление пробелов вокруг кавычек, включая прилипание и отсутствие пробелов
-    text = re.sub(r'\s*"\s*', ' "', text)               # Убираем лишние пробелы внутри кавычек
-    text = re.sub(r'([\w])"([\w])', r'\1" \2', text)  # Между словами и кавычками ставим пробел
-    text = re.sub(r'"([\w])', r'"\1', text)             # Убираем пробел после открывающей кавычки
-    text = re.sub(r'([\w])"', r'\1"', text)             # Убираем пробел перед закрывающей кавычкой
-    text = re.sub(r'\s+"', ' "', text)                   # Один пробел перед открытием кавычки
-    text = re.sub(r'"\s+', '" ', text)                   # Один пробел после закрытия кавычки
+    # Обработка пробелов вокруг кавычек, включая вложенные фразы
+    def fix_quotes_spacing(t):
+        # Добавляем пробел перед открывающей и после закрывающей кавычки, если это часть текста
+        t = re.sub(r'(\s?)"(\S.*?)"(?=\s|[.,!?;:]|$)', r' "\2"', t)
+        t = re.sub(r'\s+"', ' "', t)
+        t = re.sub(r'"\s+', '" ', t)
+        # Удаляем двойные пробелы, если они возникли
+        return re.sub(r'\s{2,}', ' ', t).strip()
 
-    return text
+    return fix_quotes_spacing(text)
 
 def has_been_posted(link):
     if not os.path.exists(SEEN_LINKS_FILE):
