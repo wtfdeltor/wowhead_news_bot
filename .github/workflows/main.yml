@@ -1,8 +1,8 @@
-name: 🌸 Публикация новостей Noob Club
+name: Автопостинг новостей Noob Club
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # Запуск каждые 15 минут
+    - cron: "*/15 * * * *"  # Каждые 15 минут
   workflow_dispatch:
 
 jobs:
@@ -10,32 +10,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📆 Клонируем репозиторий
+      - name: 🔄 Клонируем репозиторий
         uses: actions/checkout@v4
 
-      - name: 🌺 Восстановление кэша seen_links.txt
+      - name: 🧠 Восстановление кэша seen_links.txt
         uses: actions/cache@v4
         with:
-          key: seen-links-${{ runner.os }}
-          restore-keys: seen-links-
-          path: seen_links.txt
+          key: seen-links-Linux
+          restore-keys: |
+            seen-links-Linux
 
       - name: 🐍 Установка Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: ✨ Установка зависимостей
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: 📦 Установка зависимостей
+        run: pip install feedparser beautifulsoup4 requests
 
-      - name: 🌟 Запуск скрипта
+      - name: 🚀 Запуск скрипта
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL: ${{ secrets.TELEGRAM_CHANNEL }}
         run: python main.py
 
-      - name: 📥 Сохраняем кэш seen_links.txt
-        if: always()
+      - name: 📃 Сохраняем кэш seen_links.txt
         uses: actions/cache/save@v4
         with:
-          key: seen-links-${{ runner.os }}-${{ github.run_id }}
+          key: seen-links-Linux-${{ github.run_id }}
           path: seen_links.txt
