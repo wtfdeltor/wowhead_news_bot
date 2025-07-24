@@ -13,12 +13,13 @@ jobs:
       - name: 🔄 Клонируем репозиторий
         uses: actions/checkout@v4
 
-      - name: 🧠 Восстановление кэша seen_links.txt
+      - name: 💾 Сохранение кэша seen_links.txt
         uses: actions/cache@v4
         with:
-key: seen-links-Linux-${{ github.run_id }}
-    restore-keys: |
-      seen-links-Linux
+         path: seen_links.txt
+        key: seen-links-Linux-${{ github.run_id }}
+        restore-keys:
+          - seen-links-Linux
 
       - name: 🐍 Установка Python
         uses: actions/setup-python@v5
