@@ -52,11 +52,8 @@ def clean_html_preserve_spaces(html_text):
 
     # Исправление пробелов вокруг кавычек
     text = re.sub(r'\s*"\s*', '"', text)
-    text = re.sub(r'"([^"\s])', r' "\1', text)
-    text = re.sub(r'([^\s])"', r'\1" ', text)
-
-    # Финальная нормализация пробелов
-    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r'([\s\(\[{<])"', r'\1"', text)
+    text = re.sub(r'"([\s\.,!?:;\)\]}>"]*)', r'"\1', text)
 
     return text
 
