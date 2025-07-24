@@ -1,6 +1,6 @@
 # 📰 NoobClub News Bot
 
-Telegram-бот, публикующий свежие новости с [noob-club.ru](https://www.noob-club.ru/) в telegram канал с поддержкой **Instant View**.
+Telegram-бот, публикующий свежие новости с [noob-club.ru](https://www.noob-club.ru/) в telegram-канал с поддержкой **Instant View**.
 
 ## 💡 Особенности
 
