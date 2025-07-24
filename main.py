@@ -16,7 +16,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
-POST_DELAY_SECONDS = 0
+POST_DELAY_SECONDS = 15
 
 def extract_preview(summary_html):
     """Возвращает HTML до ссылки 'Читать далее'"""
@@ -33,7 +33,7 @@ def clean_html_preserve_spaces(html_text):
         br.replace_with("\n")
 
     for tag in soup.find_all("a"):
-        tag.replace_with(tag.get_text(strip=True))
+        tag.replace_with(tag.get_text())
 
     raw_text = soup.get_text(" ", strip=True)
 
@@ -50,11 +50,9 @@ def clean_html_preserve_spaces(html_text):
     text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
     text = text.replace("&quot;", '"').replace("&#039;", "'").replace("#039", "'")
 
-    # Удаление лишних кавычек и пробелов перед/после кавычек
-    text = re.sub(r"'+", "'", text)
-    text = re.sub(r'"{2,}', '"', text)
-    text = re.sub(r'\s*"\s*', '"', text)
-    text = re.sub(r"\s*'\s*", "'", text)
+    # Удаление лишних подряд и обрамляющих кавычек, но сохранение пробелов между словами
+    text = re.sub(r"\s*"([^"]*?)"\s*", r'"\1"', text)
+    text = re.sub(r"\s*'([^']*?)'\s*", r"'\1'", text)
 
     return text
 
