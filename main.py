@@ -50,14 +50,16 @@ def clean_html_preserve_spaces(html_text):
     text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
     text = text.replace("&quot;", '"').replace("&#039;", "'").replace("#039", "'")
 
-    # Удаление лишних пробелов перед и после кавычек, но с сохранением пробела до и после слова
-    text = re.sub(r'\s+"([^"]+?)"\s+', r' "\1" ', text)
-    text = re.sub(r'\s+"([^"]+?)"', r' "\1"', text)
-    text = re.sub(r'"([^"]+?)"\s+', r'"\1" ', text)
+    # Исправление пробелов вокруг кавычек
+    text = re.sub(r'\s*"\s*', '"', text)
+    text = re.sub(r'"([^"]*?)"', r' "\1" ', text)
 
-    # Исправление случаев с кавычками после точки/цифры, например: 11.1.7"Однокнопочный
-    text = re.sub(r'(\d)\s*"\s*(\S)', r'\1 "\2', text)
-    text = re.sub(r'(\S)\s*"\s*(\d)', r'\1" \2', text)
+    # Исправление кавычек после цифр/точек, например: 11.1.7"Однокнопочный → 11.1.7 "Однокнопочный"
+    text = re.sub(r'(\d)"(\S)', r'\1 "\2', text)
+    text = re.sub(r'(\S)"(\d)', r'\1" \2', text)
+
+    # Финальная нормализация пробелов
+    text = re.sub(r"\s+", " ", text).strip()
 
     return text
 
@@ -102,10 +104,10 @@ def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
 def post_to_telegram(title, iv_link, preview):
-    caption = f"<b>{title}</b>\n\n{preview}<a href=\"{iv_link}\">\u200b</a>"
+    caption = f"<b>{title}</b>\n{preview}<a href=\"{iv_link}\">\u200b</a>"
     if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href=\"{iv_link}\">\u200b</a>") - 5] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}<a href=\"{iv_link}\">\u200b</a>"
+        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n<a href=\"{iv_link}\">\u200b</a>") - 5] + "..."
+        caption = f"<b>{title}</b>\n{preview_cut}\n<a href=\"{iv_link}\">\u200b</a>"
     response = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
         data={
