@@ -117,15 +117,16 @@ def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
 def post_to_telegram(title, iv_link, preview, image_url):
-    # Ссылка Instant View скрыта с помощью zero-width space и вынесена на отдельную строку для визуального отступа
-    invisible_iv_link = f'\n<a href="{iv_link}">&#8203;</a>'
-    caption = f"<b>{title}</b>\n\n{preview}{invisible_iv_link}"
+    # Ссылка Instant View скрыта с помощью zero-width space и вынесена на отдельную строку для отступа
+    invisible_iv_link = f'<a href="{iv_link}">&#8203;</a>'
+    caption = f"<b>{title}</b>\n\n{preview}\n\n{invisible_iv_link}"
 
     if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{invisible_iv_link}") - 6] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}{invisible_iv_link}"
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n\n{invisible_iv_link}"
 
     try:
+        # Используем sendMessage — так Telegram сможет отобразить Instant View
         response = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
             data={
