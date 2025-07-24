@@ -17,7 +17,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
-POST_DELAY_SECONDS = 60
+POST_DELAY_SECONDS = 0
 GLOSSARY_FILE = "tags_glossary.yaml"
 
 # Загрузка YAML-глоссария
