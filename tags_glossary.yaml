@@ -1,0 +1,41 @@
+categories:
+  diablo:
+  - diablo
+  - санктуарий
+  hearthstone:
+  - hearthstone
+  - баттлграунд
+  overwatch:
+  - overwatch
+  - омник
+  starcraft:
+  - starcraft
+  - зерг
+  wow:
+  - world of warcraft
+  - warcraft
+  - azeroth
+  общее:
+  - blizzard
+  - blizzcon
+  разное: []
+keywords:
+  '#PTR11.2':
+  - обновление 11.2
+  - patch 11.2
+  - на ptr.*11.2
+  '#PvP':
+  - pvp
+  - пвп
+  - арена
+  '#WoW_Classic':
+  - классик
+  - classic wow
+  '#Альтерак':
+  - альтеракская долина
+  '#Призраки_Кареша':
+  - призраки к'?ареша
+  '#Турнир':
+  - турнир
+  - чемпионат
+  - турнир по
