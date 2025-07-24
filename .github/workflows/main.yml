@@ -19,6 +19,7 @@ jobs:
           key: seen-links-Linux
           restore-keys: |
             seen-links-Linux
+          path: seen_links.txt
 
       - name: 🐍 Установка Python
         uses: actions/setup-python@v5
