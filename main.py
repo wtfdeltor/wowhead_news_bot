@@ -26,24 +26,36 @@ def extract_preview(summary_html):
     return summary_html
 
 def clean_html_preserve_spaces(html_text):
-    """Очищает HTML от тегов, оставляя читаемый текст."""
+    """Очищает HTML от тегов, оставляя читаемый текст без лишних пробелов."""
     soup = BeautifulSoup(html_text, "html.parser")
+
     for br in soup.find_all("br"):
         br.replace_with("\n")
+
     for tag in soup.find_all("a"):
-        if tag.string:
-            tag.replace_with(tag.get_text())
+        tag.replace_with(tag.get_text(strip=True))
+
     raw_text = soup.get_text(" ", strip=True)
+
     raw_text = raw_text.replace("quotquot", '').replace("&#039&#039", "'").replace("#039#039", "'")
     text = html.unescape(raw_text)
+
+    # Удаление специальных маркеров и нормализация пробелов и пунктуации
     text = re.sub(r":cut:", "", text)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
     text = re.sub(r"\s+", " ", text).strip()
+
+    # Замена кавычек и символов Unicode
     text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
     text = text.replace("&quot;", '"').replace("&#039;", "'").replace("#039", "'")
+
+    # Удаление лишних кавычек и пробелов перед/после кавычек
     text = re.sub(r"'+", "'", text)
     text = re.sub(r'"{2,}', '"', text)
+    text = re.sub(r'\s*"\s*', '"', text)
+    text = re.sub(r'\s*'\s*', "'", text)
+
     return text
 
 def has_been_posted(link):
@@ -90,7 +102,7 @@ def post_to_telegram(title, iv_link, preview):
     caption = f"<b>{title}</b>\n\n{preview}\n<a href=\"{iv_link}\">\u200b</a>"
     if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href=\"{iv_link}\">\u200b</a>") - 5] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}<a href=\"{iv_link}\">\u200b</a>"
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n<a href=\"{iv_link}\">\u200b</a>"
     response = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
         data={
