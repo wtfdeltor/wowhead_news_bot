@@ -118,7 +118,7 @@ def build_instant_view_url(link):
 
 def post_to_telegram(title, iv_link, preview, image_url):
     # Ссылка Instant View скрыта с помощью zero-width space и вынесена на отдельную строку для отступа
-    invisible_iv_link = f'<a href="{iv_link}">&#8203;</a>'
+    invisible_iv_link = f'<br>&#8203;<a href="{iv_link}">&#8203;</a><br>'
     caption = f"<b>{title}</b>\n\n{preview}\n\n{invisible_iv_link}"
 
     if len(caption) > MAX_CAPTION_LENGTH:
