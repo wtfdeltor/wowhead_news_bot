@@ -17,7 +17,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
-POST_DELAY_SECONDS = 10
+POST_DELAY_SECONDS = 60
 GLOSSARY_FILE = "tags_glossary.yaml"
 
 # Загрузка YAML-глоссария
@@ -29,30 +29,30 @@ def load_glossary():
 
 glossary = load_glossary()
 
-# Парсинг HTML статьи
+# Парсинг description из HTML
 
-def fetch_article_html(link):
+def fetch_meta_description(link):
     try:
         res = requests.get(link, headers=HEADERS, timeout=10)
         if res.status_code != 200:
             return ""
         soup = BeautifulSoup(res.text, "html.parser")
-        content_div = soup.find("div", {"id": "forumposts"})
-        return content_div.get_text(" ", strip=True) if content_div else soup.get_text(" ", strip=True)
+        meta = soup.find("meta", {"name": "description"})
+        return meta["content"] if meta and meta.has_attr("content") else ""
     except Exception as e:
-        print(f"Ошибка при загрузке статьи: {e}")
+        print(f"Ошибка при загрузке description: {e}")
         return ""
 
-# Извлечение тегов
+# Извлечение тегов только по description
 
-def extract_tags_from_text(text):
+def extract_tags_from_description(desc):
     tags = []
-    text_lower = text.lower()
+    desc_lower = desc.lower()
 
     # Категория (первая и единственная)
     for cat, keywords in glossary.get("categories", {}).items():
         for word in keywords:
-            if word in text_lower:
+            if word in desc_lower:
                 tags.append(f"#{cat}")
                 break
         if tags:
@@ -64,7 +64,7 @@ def extract_tags_from_text(text):
     keyword_hits = []
     for tag, patterns in glossary.get("keywords", {}).items():
         for pat in patterns:
-            if re.search(pat, text_lower, re.IGNORECASE):
+            if re.search(pat, desc_lower, re.IGNORECASE):
                 keyword_hits.append(tag)
                 break
 
@@ -130,9 +130,8 @@ def fetch_articles():
         summary_html = entry.summary
         preview_html = extract_preview(summary_html)
         preview_text = clean_html_preserve_spaces(preview_html)
-        full_html_text = fetch_article_html(entry.link)
-        all_text = (entry.title or '') + ' ' + preview_text + ' ' + full_html_text
-        tags = extract_tags_from_text(all_text)
+        description_text = fetch_meta_description(entry.link)
+        tags = extract_tags_from_description(description_text)
         new_articles.append({
             "title": entry.title,
             "link": entry.link,
