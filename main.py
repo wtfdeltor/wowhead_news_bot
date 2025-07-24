@@ -50,9 +50,9 @@ def clean_html_preserve_spaces(html_text):
     text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
     text = text.replace("&quot;", '"').replace("&#039;", "'").replace("#039", "'")
 
-    # Удаление лишних подряд и обрамляющих кавычек, но сохранение пробелов между словами
-    text = re.sub(r"\s*"([^"]*?)"\s*", r'"\1"', text)
-    text = re.sub(r"\s*'([^']*?)'\s*", r"'\1'", text)
+    # Удаление пробелов вокруг кавычек, сохраняя содержимое
+    text = re.sub(r'\s*"\s*(.*?)\s*"\s*', r'"\1"', text)
+    text = re.sub(r"\s*'\s*(.*?)\s*'\s*", r"'\1'", text)
 
     return text
 
@@ -67,7 +67,7 @@ def mark_as_posted(link):
         f.write(link + "\n")
 
 def fetch_articles():
-    print("🔁 Загружаем RSS-фид Noob Club...")
+    print("\U0001F501 Загружаем RSS-фид Noob Club...")
     response = requests.get(NOOBCLUB_RSS, headers=HEADERS)
     if response.status_code != 200:
         print(f"❌ Ошибка загрузки RSS: {response.status_code}")
@@ -97,10 +97,10 @@ def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
 def post_to_telegram(title, iv_link, preview):
-    caption = f"<b>{title}</b>\n{preview}\n<a href=\"{iv_link}\">\u200b</a>"
+    caption = f"<b>{title}</b>\n{preview}<a href=\"{iv_link}\">\u200b</a>"
     if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n<a href=\"{iv_link}\">\u200b</a>") - 5] + "..."
-        caption = f"<b>{title}</b>\n{preview_cut}\n<a href=\"{iv_link}\">\u200b</a>"
+        caption = f"<b>{title}</b>\n{preview_cut}<a href=\"{iv_link}\">\u200b</a>"
     response = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
         data={
@@ -110,7 +110,7 @@ def post_to_telegram(title, iv_link, preview):
             "disable_web_page_preview": False,
         },
     )
-    print(f"📤 Статус отправки в Telegram: {response.status_code}")
+    print(f"\U0001F4E4 Статус отправки в Telegram: {response.status_code}")
     if response.status_code == 200:
         print("✅ Пост отправлен успешно")
     else:
