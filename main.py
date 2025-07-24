@@ -50,12 +50,14 @@ def clean_html_preserve_spaces(html_text):
     text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
     text = text.replace("&quot;", '"').replace("&#039;", "'").replace("#039", "'")
 
-    # Исправление пробелов вокруг кавычек (без удаления нужных)
-    text = re.sub(r'\s+"', ' "', text)
-    text = re.sub(r'"\s+', '" ', text)
-    text = re.sub(r'\s+\"(.*?)\"\s+', r' "\1" ', text)
-    text = re.sub(r'\s+\"(.*?)\"', r' "\1"', text)
-    text = re.sub(r'\"(.*?)\"\s+', r'"\1" ', text)
+    # Удаление лишних пробелов перед и после кавычек, но с сохранением пробела до и после слова
+    text = re.sub(r'\s+"([^"]+?)"\s+', r' "\1" ', text)
+    text = re.sub(r'\s+"([^"]+?)"', r' "\1"', text)
+    text = re.sub(r'"([^"]+?)"\s+', r'"\1" ', text)
+
+    # Исправление случаев с кавычками после точки/цифры, например: 11.1.7"Однокнопочный
+    text = re.sub(r'(\d)\s*"\s*(\S)', r'\1 "\2', text)
+    text = re.sub(r'(\S)\s*"\s*(\d)', r'\1" \2', text)
 
     return text
 
