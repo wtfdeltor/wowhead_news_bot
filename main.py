@@ -16,7 +16,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
-POST_DELAY_SECONDS = 15
+POST_DELAY_SECONDS = 0
 
 def extract_preview(summary_html):
     """Возвращает HTML до ссылки 'Читать далее'"""
