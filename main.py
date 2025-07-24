@@ -49,15 +49,21 @@ def extract_tags_from_description(desc):
     tags = []
     desc_lower = desc.lower()
 
-    # Категория (первая и единственная), строгий приоритет
+    # Категория (первая и единственная), с учётом приоритета classic
     category_matched = None
+    found_categories = []
+
     for cat, keywords in glossary.get("categories", {}).items():
         for word in keywords:
             if re.search(rf"\b{re.escape(word.lower())}\b", desc_lower):
-                category_matched = f"#{cat}"
+                found_categories.append(cat)
                 break
-        if category_matched:
-            break
+
+    # приоритет: если среди найденных есть wow_classic, то берём только его
+    if "wow_classic" in found_categories:
+        category_matched = "#wow_classic"
+    elif found_categories:
+        category_matched = f"#{found_categories[0]}"
 
     if category_matched:
         tags.append(category_matched)
