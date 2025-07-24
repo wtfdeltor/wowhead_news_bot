@@ -97,6 +97,7 @@ def clean_html_preserve_spaces(html_text):
     text = re.sub(r":cut:", "", text)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
+    text = re.sub(r"(\d)\s*\.\s*(\d)", r"\1.\2", text)  # удаляем пробелы между цифрами и точкой
     text = re.sub(r"\s+", " ", text).strip()
     def fix_quotes_spacing(t):
         t = re.sub(r'(\s?)"(\S.*?)"(?=\s|[.,!?;:]|$)', r' "\2"', t)
