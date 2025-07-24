@@ -6,6 +6,7 @@ from datetime import datetime
 import re
 import html
 import time
+import yaml
 
 # Константы и переменные окружения
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -16,50 +17,87 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 MAX_CAPTION_LENGTH = 1024
 IV_HASH = "fed000eccaa3ad"
 SEEN_LINKS_FILE = "seen_links.txt"
-POST_DELAY_SECONDS = 60
+POST_DELAY_SECONDS = 10
+GLOSSARY_FILE = "tags_glossary.yaml"
+
+# Загрузка YAML-глоссария
+def load_glossary():
+    if not os.path.exists(GLOSSARY_FILE):
+        return {"categories": {}, "keywords": {}}
+    with open(GLOSSARY_FILE, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+glossary = load_glossary()
+
+# Парсинг HTML статьи
+
+def fetch_article_html(link):
+    try:
+        res = requests.get(link, headers=HEADERS, timeout=10)
+        if res.status_code != 200:
+            return ""
+        soup = BeautifulSoup(res.text, "html.parser")
+        content_div = soup.find("div", {"id": "forumposts"})
+        return content_div.get_text(" ", strip=True) if content_div else soup.get_text(" ", strip=True)
+    except Exception as e:
+        print(f"Ошибка при загрузке статьи: {e}")
+        return ""
+
+# Извлечение тегов
+
+def extract_tags_from_text(text):
+    tags = []
+    text_lower = text.lower()
+
+    # Категория (первая и единственная)
+    for cat, keywords in glossary.get("categories", {}).items():
+        for word in keywords:
+            if word in text_lower:
+                tags.append(f"#{cat}")
+                break
+        if tags:
+            break
+    if not tags:
+        tags.append("#разное")
+
+    # Остальные теги по ключевым словам
+    keyword_hits = []
+    for tag, patterns in glossary.get("keywords", {}).items():
+        for pat in patterns:
+            if re.search(pat, text_lower, re.IGNORECASE):
+                keyword_hits.append(tag)
+                break
+
+    tags += keyword_hits[:4]  # максимум 4 доп. тега
+    return tags
+
+# Очистка HTML превью
 
 def extract_preview(summary_html):
-    """Возвращает HTML до ссылки 'Читать далее'"""
     match = re.search(r"(.*?)(<a\s+href=[^>]+?>Читать далее</a>)", summary_html, re.DOTALL)
-    if match:
-        return match.group(1)
-    return summary_html
+    return match.group(1) if match else summary_html
 
 def clean_html_preserve_spaces(html_text):
-    """Очищает HTML от тегов, оставляя читаемый текст без лишних пробелов."""
     soup = BeautifulSoup(html_text, "html.parser")
-
     for br in soup.find_all("br"):
         br.replace_with("\n")
-
     for tag in soup.find_all("a"):
         tag.replace_with(tag.get_text())
-
     raw_text = soup.get_text(" ", strip=True)
-
     raw_text = raw_text.replace("quotquot", '').replace("&#039&#039", "'").replace("#039#039", "'")
     text = html.unescape(raw_text)
-
-    # Удаление специальных маркеров и нормализация пробелов и пунктуации
     text = re.sub(r":cut:", "", text)
     text = re.sub(r"\s+([.,!?;:])", r"\1", text)
     text = re.sub(r"([.,!?;:])(?=\S)", r"\1 ", text)
     text = re.sub(r"\s+", " ", text).strip()
-
-    # Замена кавычек и символов Unicode
-    text = text.replace("\u201c", '"').replace("\u201d", '"').replace("\u2018", "'").replace("\u2019", "'")
-    text = text.replace("&quot;", '"').replace("&#039;", "'").replace("#039", "'")
-
-    # Обработка пробелов вокруг кавычек, включая вложенные фразы
     def fix_quotes_spacing(t):
-        # Добавляем пробел перед открывающей и после закрывающей кавычки, если это часть текста
         t = re.sub(r'(\s?)"(\S.*?)"(?=\s|[.,!?;:]|$)', r' "\2"', t)
         t = re.sub(r'\s+"', ' "', t)
         t = re.sub(r'"\s+', '" ', t)
-        # Удаляем двойные пробелы, если они возникли
         return re.sub(r'\s{2,}', ' ', t).strip()
-
     return fix_quotes_spacing(text)
+
+# Проверка и сохранение ссылок
 
 def has_been_posted(link):
     if not os.path.exists(SEEN_LINKS_FILE):
@@ -70,6 +108,8 @@ def has_been_posted(link):
 def mark_as_posted(link):
     with open(SEEN_LINKS_FILE, "a") as f:
         f.write(link + "\n")
+
+# Загрузка статей
 
 def fetch_articles():
     print("\U0001F501 Загружаем RSS-фид Noob Club...")
@@ -90,22 +130,34 @@ def fetch_articles():
         summary_html = entry.summary
         preview_html = extract_preview(summary_html)
         preview_text = clean_html_preserve_spaces(preview_html)
+        full_html_text = fetch_article_html(entry.link)
+        all_text = (entry.title or '') + ' ' + preview_text + ' ' + full_html_text
+        tags = extract_tags_from_text(all_text)
         new_articles.append({
             "title": entry.title,
             "link": entry.link,
             "published": entry.published,
             "preview": preview_text,
+            "tags": tags,
         })
     return new_articles
+
+# Instant View-ссылка
 
 def build_instant_view_url(link):
     return f"https://t.me/iv?url={link}&rhash={IV_HASH}"
 
-def post_to_telegram(title, iv_link, preview):
-    caption = f"<b>{title}</b>\n\n{preview}<a href=\"{iv_link}\">\u200b</a>"
+# Публикация в Telegram
+
+def post_to_telegram(title, iv_link, preview, tags):
+    tags_line = " ".join(tags)
+    hidden_link = f"<a href=\"{iv_link}\">\u200b</a>"
+    caption = f"<b>{title}</b>\n\n{preview}\n{tags_line} {hidden_link}"
     if len(caption) > MAX_CAPTION_LENGTH:
-        preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n<a href=\"{iv_link}\">\u200b</a>") - 5] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}<a href=\"{iv_link}\">\u200b</a>"
+        cut_len = MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{tags_line} {hidden_link}") - 5
+        preview_cut = preview[:cut_len] + "..."
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n{tags_line} {hidden_link}"
+
     response = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
         data={
@@ -121,6 +173,8 @@ def post_to_telegram(title, iv_link, preview):
     else:
         print(f"❌ Ошибка: {response.json()}")
 
+# Главная функция
+
 def main():
     articles = fetch_articles()
     if not articles:
@@ -128,7 +182,7 @@ def main():
         return
     for idx, article in enumerate(articles):
         iv_link = build_instant_view_url(article["link"])
-        post_to_telegram(article["title"], iv_link, article["preview"])
+        post_to_telegram(article["title"], iv_link, article["preview"], article["tags"])
         mark_as_posted(article["link"])
         if idx < len(articles) - 1:
             print(f"⏳ Ждём {POST_DELAY_SECONDS} секунд перед следующим постом...")
