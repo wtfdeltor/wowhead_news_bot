@@ -119,11 +119,11 @@ def build_instant_view_url(link):
 def post_to_telegram(title, iv_link, preview, image_url):
     # Ссылка Instant View скрыта с помощью zero-width space и отделена пробелом
     invisible_iv_link = f'<a href="{iv_link}">&#8203;</a>'
-    caption = f"<b>{title}</b>\n\n{preview}\n\n{invisible_iv_link}"
+    caption = f"<b>{title}</b>\n\n{preview}\n&nbsp;\n{invisible_iv_link}"
 
     if len(caption) > MAX_CAPTION_LENGTH:
         preview_cut = preview[:MAX_CAPTION_LENGTH - len(f"<b>{title}</b>\n\n{invisible_iv_link}") - 6] + "..."
-        caption = f"<b>{title}</b>\n\n{preview_cut}\n \n{invisible_iv_link}"
+        caption = f"<b>{title}</b>\n\n{preview_cut}\n&nbsp;\n{invisible_iv_link}"
 
     try:
         # Используем sendMessage — так Telegram сможет отобразить Instant View
